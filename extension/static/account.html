@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mirror: account</title><link rel="stylesheet" href="eye.css"><link rel="stylesheet" href="style.css"></head>
+<body class="page"><div id="pair"></div><h1>Connect your devices</h1>
+<p>Optional. Daily totals are encrypted on this laptop before they are uploaded.</p>
+<p id="error" class="error" role="alert"></p>
+<p id="off" hidden>Sync is not set up in this build.</p>
+<form id="login" class="form" hidden><label>Email<input id="email" type="email" autocomplete="username" required></label>
+<label>Password<input id="password" type="password" minlength="8" autocomplete="current-password" required></label>
+<button class="primary" id="signin">Sign in</button><button id="create">Create account</button></form>
+<form id="unlock" class="form" hidden><label>Recovery words<input id="words-in" autocomplete="off" required></label><button class="primary">Connect this laptop</button></form>
+<div id="words" class="form" hidden><p>Your recovery words. You need them on your other devices, and nobody can reset them.</p><p id="phrase" class="phrase"></p><button id="saved" class="primary">I've written them down</button></div>
+<div id="linked" class="form" hidden><p>Connected as <b id="who"></b></p><p id="when" role="status"></p><p id="problem" class="error"></p>
+<button id="sync" class="primary">Sync now</button><button id="report">Open combined report</button><button id="out">Sign out on this laptop</button></div>
+<p><a href="share.html">Other ways to share (QR or file)</a></p>
+<script type="module" src="account.js"></script></body></html>

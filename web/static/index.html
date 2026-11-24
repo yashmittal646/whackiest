@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="%CSP%">
+<meta name="theme-color" content="#ff4a26"><meta name="description" content="Mirror follows doom-scrolling from your laptop to your phone, and shows how it relates to your sleep.">
+<title>Mirror</title><link rel="stylesheet" href="eye.css"><link rel="stylesheet" href="style.css"></head>
+<body>
+<header id="nav"><a href="./" class="brand">Mirror</a><div class="who"><span id="who"></span><button id="signin" class="plain">Sign in</button><button id="out" class="plain" hidden>Sign out</button></div></header>
+<p id="error" role="alert"></p>
+
+<div id="start" hidden>
+  <section class="hero">
+    <h1 id="bend" aria-label="Your attention doesn't stop at one screen"><span class="bend-row" aria-hidden="true"><span>YOUR ATTENTION</span></span><span class="bend-row" aria-hidden="true"><span>D<i class="o"></i>ESN'T</span></span><span class="bend-row" aria-hidden="true"><span>ST<i class="o"></i>P AT ONE</span></span><span class="bend-row" aria-hidden="true"><span>SCREEN</span></span></h1>
+    <div class="hero-foot"><p>Mirror follows the scroll from your laptop to your phone, and shows you how it lines up with your sleep.</p><div class="actions"><button id="join" class="btn">Start yours</button><button id="sample" class="btn line">See a sample report</button></div></div>
+  </section>
+
+  <section id="tunnel"><div class="pin"><canvas id="tunnel-c" role="img" aria-label="A laptop showing a phone showing a laptop, from 22:10 to 02:04"></canvas></div></section>
+
+  <section id="story"><div class="pin"><div class="told"><p id="clock" aria-hidden="true">20:00</p><p class="big"><b id="count">0</b> minutes gone</p>
+    <p class="key"><i class="sq"></i>laptop <i class="ci"></i>phone</p><p class="small">One shape is one minute of doom-scrolling, averaged from invented sample nights.</p></div>
+    <canvas id="dots" role="img" aria-label="Minutes pile up by hour: mostly laptop until 23:00, mostly phone after midnight"></canvas></div></section>
+
+  <section id="score"><div id="big-eye"></div><p id="try-score" aria-live="off">0</p><p id="try-why"></p>
+    <div class="desk"><h2 class="stretch">Work late.<br>It won't mind.</h2>
+      <div class="knobs"><p>Scrolling is another matter. Try it: this is the real formula.</p>
+        <div id="try-kind" role="group" aria-label="What you are looking at"><button value="neutral" aria-pressed="true">Work</button><button value="news" aria-pressed="false">News</button><button value="social" aria-pressed="false">Social</button><button value="shortVideo" aria-pressed="false">Short video</button></div>
+        <label class="slide"><span>Time on feeds</span><output id="try-time-v"></output><input id="try-time" type="range" min="0" max="30" value="8"></label>
+        <label class="slide"><span>Tab hopping</span><output id="try-hops-v"></output><input id="try-hops" type="range" min="0" max="6" value="2"></label>
+        <div class="toggles"><label><input id="try-late" type="checkbox"><span>After 23:00</span></label><label><input id="try-slouch" type="checkbox"><span>Slouching</span></label></div></div></div>
+    <div id="nudge" role="status"><p>You've been scrolling for a while. Still what you came for?</p><button id="nudge-ok" class="btn">I'm here on purpose</button></div></section>
+
+  <section id="vault"><div><h2 class="stretch">No peeking.</h2><div id="peek"></div></div>
+    <div><pre id="cipher"></pre><button id="seal" class="btn">Hide it from the server</button><p id="seal-note" class="small" role="status">A sample record, readable.</p>
+      <p>Your daily totals are encrypted on your device before they sync. Sites and app names are never uploaded.</p>
+      <p class="small">The server still sees your email, IP address, when you sync and how many records you have. This prototype uses two recovery words, which isn't strong protection yet.</p></div></section>
+
+  <section id="night"><div id="sleepers"></div><h2 class="stretch">See it.<br>Then sleep.</h2><button id="join2" class="btn">Start yours</button></section>
+</div>
+
+<dialog id="door" aria-labelledby="door-title"><button id="shut" class="x" aria-label="Close">×</button>
+  <div id="sign"><h2 id="door-title">Come in</h2><p>One account for your laptop, phone and report.</p>
+    <form id="login" hidden><label>Email<input id="email" type="email" autocomplete="username" required></label>
+      <label>Password<input id="password" type="password" minlength="8" autocomplete="current-password" required></label>
+      <button class="btn primary">Sign in</button><button id="create" class="btn line">Create account</button></form>
+    <p id="off" hidden>Accounts are not set up in this build.</p></div>
+  <div id="unlock" hidden><h2>Say the words</h2><form id="unlock-form"><label>Recovery words<input id="words-in" autocomplete="off" required></label><button class="btn primary">Unlock</button></form></div>
+  <div id="words" hidden><h2>Keep these</h2><p>Your recovery words. You need them on your other devices, and nobody can reset them.</p><p id="phrase"></p><button id="saved" class="btn primary">I've written them down</button></div>
+  <p id="door-error" role="alert"></p></dialog>
+
+<main id="report" hidden>
+  <p id="banner" hidden>Sample data: these records are invented for demonstration</p>
+  <div class="filters"><label>Showing <select id="source"><option value="real">My data</option><option value="demo">Sample and demo data</option></select></label>
+    <label>Night <select id="night-pick"></select></label><button id="refresh" class="plain">Refresh</button></div>
+  <div id="cards"></div>
+  <section class="band pinkish"><h2>Your nights</h2><p>Shut means eight hours of sleep. Wide open means five or less. Choose one to see that night.</p><div id="moons"></div></section>
+  <section class="band white"><h2>The hand-off</h2><p id="sub"></p>
+    <p class="key"><i class="sq"></i>Laptop <i class="ci"></i>Phone</p>
+    <div id="chart"></div><p id="chart-empty" hidden>No records yet. Connect the extension or phone app to see your own hand-off.</p><div id="tip" hidden></div>
+    <details><summary>Hours as a table</summary><div id="table"></div></details><details><summary>Nights as a table</summary><div id="nights"></div></details></section>
+  <section class="band blue" id="privacy"><h2>Privacy and data</h2>
+    <p><b>The server sees</b> your email, IP address, when you sync, and how many records you have. <b>It does not receive in readable form</b> dates, minutes, sleep or device types. Sites and app names are never uploaded.</p>
+    <p class="small">Prototype note: two recovery words are enough for a demo, not for strong protection. Real accounts will use more.</p>
+    <div id="raw-box"><p>One of your records, as the server sees it:</p><pre id="raw"></pre></div>
+    <div class="actions"><button id="export" class="btn">Export everything</button><button id="file" class="btn">Import a Mirror file</button><input id="file-in" type="file" accept=".json,application/json" hidden><button id="delete" class="btn danger">Delete cloud data and account</button></div></section>
+</main>
+<script type="module" src="main.js"></script></body></html>

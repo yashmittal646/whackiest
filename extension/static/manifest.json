@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Mirror",
+  "version": "0.1.0",
+  "description": "Notices doom-scrolling. Optional sync is encrypted before upload.",
+  "minimum_chrome_version": "120",
+  "permissions": ["tabs", "storage", "alarms", "idle", "notifications"],
+  "host_permissions": [],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html" },
+  "icons": { "128": "icon128.png" },
+  "content_security_policy": {
+    "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+  }
+}

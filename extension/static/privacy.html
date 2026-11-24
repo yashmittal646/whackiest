@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mirror: privacy</title><link rel="stylesheet" href="eye.css"><link rel="stylesheet" href="style.css"></head>
+<body class="page"><h1>Privacy and data</h1>
+<p>Mirror reads the active tab's address once a minute to sort it into a category (short video, social, news, other), then discards it. In demo mode it does this every 2 seconds. Sites and addresses are never stored. Chrome describes this permission as "Read your browsing history".</p>
+<p>Sync is optional. If you connect an account, daily totals are encrypted here before upload, and the policy below allows only our sync server. The server still sees your email, IP address and when you sync. The current two recovery words are for the prototype, not strong protection.</p>
+<p>The camera is not used in this version.</p>
+<h2>Wipe</h2><button id="wipe" class="danger">Delete everything on this laptop</button><p id="done" role="status"></p>
+<h2>Permissions and network policy</h2><pre id="manifest"></pre>
+<h2>Everything Mirror has stored</h2><pre id="data"></pre>
+<script type="module" src="privacy.js"></script></body></html>

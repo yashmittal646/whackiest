@@ -1,0 +1,27 @@
+{
+  "name": "mirror",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "extension",
+    "web",
+    "app"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "npm run build -w extension && npm run build -w web",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.6",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  }
+}

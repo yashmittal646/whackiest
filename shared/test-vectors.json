@@ -1,0 +1,8 @@
+[
+  { "name": "reading docs at noon", "input": { "category": "neutral", "switchesPerMin": 0, "feedMin": 0, "hour": 12, "slouching": null }, "min": 0, "max": 0 },
+  { "name": "frantic late work, slouching, is never doom", "input": { "category": "neutral", "switchesPerMin": 30, "feedMin": 0, "hour": 1, "slouching": true }, "min": 20, "max": 59 },
+  { "name": "quick social check by day", "input": { "category": "social", "switchesPerMin": 1, "feedMin": 2, "hour": 14, "slouching": false }, "min": 40, "max": 55 },
+  { "name": "half an hour of social by day", "input": { "category": "social", "switchesPerMin": 0, "feedMin": 30, "hour": 14, "slouching": false }, "min": 60, "max": 70 },
+  { "name": "short video, late", "input": { "category": "shortVideo", "switchesPerMin": 2, "feedMin": 10, "hour": 0, "slouching": false }, "min": 70, "max": 80 },
+  { "name": "everything at once is capped", "input": { "category": "shortVideo", "switchesPerMin": 20, "feedMin": 90, "hour": 23, "slouching": true }, "min": 100, "max": 100 }
+]

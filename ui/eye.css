@@ -1,0 +1,11 @@
+@font-face{font-family:Anybody;src:url(fonts/anybody.woff2) format("woff2");font-weight:100 900;font-stretch:50% 150%;font-display:swap}
+@font-face{font-family:Schibsted;src:url(fonts/schibsted.woff2) format("woff2");font-weight:400 900;font-display:swap}
+:root{--ink:#17101f;--pink:#ffb0d0;--blush:#ffe1ec;--tomato:#ff4a26;--cobalt:#2536e8;--butter:#ffd447;--laptop:#2536e8;--phone:#e8391a;--snap:cubic-bezier(.3,1.7,.5,1);--out:cubic-bezier(.16,1,.3,1)}
+.eye{display:block;overflow:visible}.eye-look{transform:translate(calc(var(--px,0)*17px),calc(var(--py,0)*17px));transition:transform .18s var(--out)}
+.eye-pupil,.eye-turn,.eye-hyp{transform-box:fill-box;transform-origin:center}.eye-pupil{transform:scale(calc(1 - var(--wire,0)*.62));transition:transform .5s var(--snap)}
+.eye-hyp{opacity:var(--wire,0);transition:opacity .4s}.eye-turn{animation:eye-turn 2.4s linear infinite}@keyframes eye-turn{to{transform:rotate(-360deg)}}
+.eye-veins{opacity:var(--wire,0);transition:opacity .5s}
+.eye-up{transform:translateY(calc(var(--lid,0)*62px));transition:transform .28s var(--out)}.eye-down{transform:translateY(calc(var(--lid,0)*-39px));transition:transform .28s var(--out)}
+.eye-lash{opacity:calc((var(--lid,0) - .9)*12);transition:opacity .15s}
+.eye.blink .eye-up{transform:translateY(62px);transition-duration:.09s}.eye.blink .eye-down{transform:translateY(-39px);transition-duration:.09s}
+@media(prefers-reduced-motion:reduce){.eye *{animation:none!important;transition:none!important}}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+.env
+app/src/config.gen.json
+app/android/
+build/
