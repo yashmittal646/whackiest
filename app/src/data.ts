@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import Storage from "expo-sqlite/kv-store";
-import { fresh, keepFuller, phonePackets, phoneWindow, trackPhone, upload, type CloudConfig, type DevicePacket, type Track, type Unlocked } from "@mirror/shared";
+import { PermissionsAndroid, Platform } from "react-native";
+import { APPS, spec, fresh, keepFuller, phonePackets, phoneWindow, trackPhone, upload, type CloudConfig, type DevicePacket, type Track, type Unlocked } from "@mirror/shared";
 import { Native } from "./native";
 import config from "./config.gen.json";
 
@@ -44,7 +45,15 @@ export async function sync(account: Account, days: DevicePacket[]): Promise<Acco
   return a;
 }
 
+/** Starts live nudges, or restarts them with current settings. Returns false if notifications are refused. */
+export async function watch(): Promise<boolean> {
+  const ok = Number(Platform.Version) < 33 || (await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS!)) === "granted";
+  if (ok) await Native.startWatch(JSON.stringify({ spec, apps: APPS }));
+  return ok;
+}
+
 export async function wipe(): Promise<void> {
+  await Native.stopWatch(true);
   await clearAccount();
   await Storage.clearAsync();
 }

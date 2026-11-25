@@ -264,33 +264,33 @@ mirror/
 ## Build & Run
 
 ### Prerequisites
-- Node 20+ and pnpm 9+
-- Android Studio (for Kotlin native modules)
+- Node 22.18+ and npm
 - Chrome 120+ (for MV3 offscreen document support)
-- Java 17+
+- For the Android app: Java 17 and the Android SDK
 
 ### Setup
 ```bash
-git clone https://github.com/your-team/mirror.git
-cd mirror
-pnpm install
+git clone https://github.com/yashmittal646/whackiest.git
+cd whackiest
+npm install
+npm run check               # types, tests and builds
+```
 
-# Run shared package tests (doom score + test vectors)
-pnpm --filter shared test
+### Chrome Extension
+`npm run build`, then in Chrome: chrome://extensions → Developer mode → Load unpacked → select `extension/dist`.
+
+### Report Website
+```bash
+npm run dev -w web          # http://127.0.0.1:5180
 ```
 
 ### Android App
 ```bash
 cd app
-pnpm expo prebuild          # generates android/ folder
-pnpm expo run:android       # builds and installs on connected device
-```
-
-### Chrome Extension
-```bash
-cd extension
-pnpm build                  # outputs to dist/
-# In Chrome: chrome://extensions → Developer mode → Load unpacked → select dist/
+npm run prepare_android     # generates the android/ folder
+cd android
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
 ---

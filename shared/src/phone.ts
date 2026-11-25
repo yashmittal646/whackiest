@@ -6,7 +6,7 @@ import { newTrack, step, toPacket, type Track } from "./tracker.ts";
 export interface Span { pkg: string; start: number; end: number }
 
 // YouTube is left out on purpose: a package name cannot tell Shorts from other videos.
-const APPS: Record<string, Category> = {
+export const APPS: Record<string, Category> = {
   "com.zhiliaoapp.musically": "shortVideo", "com.ss.android.ugc.trill": "shortVideo",
   "com.instagram.android": "social", "com.instagram.lite": "social", "com.twitter.android": "social", "com.reddit.frontpage": "social",
   "com.facebook.katana": "social", "com.facebook.lite": "social", "com.instagram.barcelona": "social", "com.snapchat.android": "social",

@@ -8,6 +8,10 @@ interface Native {
   hmac(key: string, data: string): Promise<string>;
   hasUsageAccess(): boolean;
   openUsageSettings(): void;
+  startWatch(config: string): Promise<void>;
+  stopWatch(forget: boolean): Promise<void>;
+  watchOn(): boolean;
+  testNudge(): void;
   usage(from: number, to: number): Promise<Span[]>;
 }
 export const Native = requireNativeModule<Native>("MirrorNative");

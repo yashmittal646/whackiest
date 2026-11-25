@@ -7,8 +7,8 @@ import Storage from "expo-sqlite/kv-store";
 import { SchibstedGrotesk_500Medium } from "@expo-google-fonts/schibsted-grotesk/500Medium";
 import { SchibstedGrotesk_800ExtraBold } from "@expo-google-fonts/schibsted-grotesk/800ExtraBold";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { buildReport, dayKey, deleteAccount, download, fresh, getVault, hourly, MIN_NIGHTS, samplePackets, setUpVault, signIn, signOut, signUp, toB64, unlock, type DevicePacket, type Session, type Track, type Vault } from "@mirror/shared";
-import { clearAccount, CONFIG, loadAccount, measure, saveAccount, sync, wipe, type Account } from "./data";
+import { buildReport, dayKey, deleteAccount, download, fresh, getVault, hourly, MIN_NIGHTS, samplePackets, setUpVault, signIn, signOut, signUp, toB64, unlock, type DevicePacket, type Session, type Vault } from "@mirror/shared";
+import { clearAccount, CONFIG, loadAccount, measure, saveAccount, sync, watch, wipe, type Account } from "./data";
 import { Native } from "./native";
 import { Band, Button, C, Copy, Count, Eye, F, Handoff, Line, Tabs, Title, Tunnel, Wobble, type Tab } from "./ui";
 
@@ -17,12 +17,12 @@ export default function Main() { return <SafeAreaProvider><Mirror /></SafeAreaPr
 function Mirror() {
   const [fonts] = useFonts({ AnybodyWide: require("../assets/fonts/AnybodyWide.ttf"), AnybodyTall: require("../assets/fonts/AnybodyTall.ttf"), AnybodyBold: require("../assets/fonts/AnybodyBold.ttf"), SchibstedGrotesk_500Medium, SchibstedGrotesk_800ExtraBold });
   const inset = useSafeAreaInsets(), { width } = useWindowDimensions(), scroller = useRef<ScrollViewInstance>(null);
-  const [tab, setTab] = useState<Tab>("tonight"), [inside, setInside] = useState(false);
+  const [tab, setTab] = useState<Tab>("tonight"), [inside, setInside] = useState(false), [live, setLive] = useState(false);
   const [ready, setReady] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [account, setAccount] = useState<Account | null>(null), [session, setSession] = useState<Session | null>(null), [vault, setVault] = useState<Vault | null>(null);
   const [made, setMade] = useState<{ phrase: string; key: string } | null>(null);
   const [email, setEmail] = useState(""), [password, setPassword] = useState(""), [words, setWords] = useState("");
-  const [access, setAccess] = useState(false), [days, setDays] = useState<DevicePacket[]>([]), [track, setTrack] = useState<Track | null>(null);
+  const [access, setAccess] = useState(false), [days, setDays] = useState<DevicePacket[]>([]);
   const [cloud, setCloud] = useState<DevicePacket[]>([]), [sample, setSample] = useState(false), [last, setLast] = useState("");
   const running = useRef(false), look = useRef(new Animated.ValueXY()).current;
 
@@ -39,9 +39,9 @@ function Mirror() {
 
   const remeasure = useCallback(async () => {
     setAccess(Native.hasUsageAccess());
+    setLive(Native.watchOn());
     const m = await measure();
     setDays(m.days);
-    setTrack(m.track);
     return m.days;
   }, []);
 
@@ -61,6 +61,7 @@ function Mirror() {
       setAccount(a);
       setInside(!!a || (await Storage.getItemAsync("entered")) === "1");
       setReady(true);
+      if (Native.watchOn() && Native.hasUsageAccess() && !(await watch())) await Native.stopWatch(false);
       if (a) await syncNow(a); else await remeasure();
     });
     const sub = AppState.addEventListener("change", (st) => { if (st === "active") void attempt(async () => { await remeasure(); }); });
@@ -84,7 +85,7 @@ function Mirror() {
     await syncNow(a);
   };
   const leave = async (all: boolean) => {
-    if (all) { await wipe(); setDays([]); setTrack(null); } else await clearAccount();
+    if (all) { await wipe(); setDays([]); setLive(false); } else await clearAccount();
     setAccount(null); setCloud([]); setLast("");
     if (all) { setInside(false); setTab("tonight"); }
   };
@@ -94,8 +95,8 @@ function Mirror() {
   const now = Date.now(), today = days.find((d) => d.date === dayKey(now));
   // This phone's own totals show at once, even before they sync.
   const real = [...cloud.filter((p) => !p.demo), ...days.filter((d) => !cloud.some((p) => !p.demo && p.device === "phone" && p.date === d.date))];
-  const live = cloud.filter((p) => p.demo), taken = new Set(live.map((p) => p.device + p.date));
-  const packets = sample ? [...samplePackets(now).filter((p) => !taken.has(p.device + p.date)), ...live] : real;
+  const demo = cloud.filter((p) => p.demo), taken = new Set(demo.map((p) => p.device + p.date));
+  const packets = sample ? [...samplePackets(now).filter((p) => !taken.has(p.device + p.date)), ...demo] : real;
   const report = buildReport(packets, sample);
   const nights = report.nights.filter((n) => n.sleepMin !== null && n.laptopLateMin !== null && n.phoneLateMin !== null).length;
   const input = { minHeight: 60, borderWidth: 3, paddingHorizontal: 16, fontSize: 18, fontFamily: F.body, color: C.ink, borderColor: C.ink, backgroundColor: C.white };
@@ -138,7 +139,11 @@ function Mirror() {
               <View style={{ flexDirection: "row", borderTopWidth: 3, borderColor: C.ink, paddingTop: 12 }}>
                 {([[today?.screenMin, "screen min"], [today?.lateNightMin, "late min"], [today?.switches, "app switches"]] as const).map(([v, n]) => <View key={n} style={{ flex: 1 }}><Text style={{ fontFamily: F.tall, fontSize: 44, lineHeight: 46, color: C.ink }}>{v ?? 0}</Text><Copy style={{ fontSize: 15 }}>{n}</Copy></View>)}
               </View>
-              {track?.days[dayKey(now)]?.nudges ? <Copy>Mirror would have nudged you {track.days[dayKey(now)]!.nudges} time(s) today. Live phone nudges aren't built yet.</Copy> : null}
+            </Band>
+            <Band bg={live ? C.cobalt : C.pink}><Title color={live ? C.white : C.ink}>{live ? "Watching live" : "Want a tap on the shoulder?"}</Title>
+              <Copy style={{ color: live ? C.white : C.ink }}>{live ? "Mirror checks once a minute while the screen is on. After a phone restart, open Mirror to resume." : "Mirror can nudge you after 15 minutes of doom-scrolling. It shows a permanent notification while it watches."}</Copy>
+              {live ? <><Button bg={C.white} title="Show a test nudge" onPress={() => Native.testNudge()} /><Button fg={C.white} title="Stop nudges" disabled={busy} onPress={() => void attempt(async () => { await Native.stopWatch(false); setLive(false); })} /></>
+                : <Button bg={C.ink} fg={C.white} title="Start live nudges" disabled={busy} onPress={() => void attempt(async () => { const ok = await watch(); setLive(ok); if (!ok) throw new Error("Allow notifications for Mirror in Android settings."); })} />}
             </Band>
             <Band bg={C.white}><Title>Hour by hour</Title><Handoff on={tab + todays.length} laptop={hourly(todays, "laptop", null)} phone={hourly(todays, "phone", null)} /></Band>
           </>

@@ -2,7 +2,7 @@ import type { DevicePacket } from "./packet.ts";
 import { doomScore, isLateNight, scoreParts, spec, type Category, type ScoreInput, type ScoreParts } from "./score.ts";
 import { dayKey } from "./time.ts";
 
-export interface Day { screenMin: number; doomMin: number; lateNightMin: number; lateDoomMin: number; hourlyDoom: number[]; switches: number; nudges: number }
+export interface Day { screenMin: number; doomMin: number; lateNightMin: number; lateDoomMin: number; hourlyDoom: number[]; switches: number; nudges: number; slouchMin?: number; presenceMin?: number; breaks?: number }
 export interface Track {
   days: Record<string, Day>;
   /** Switch counts for the last few minutes. No sites are kept. */
@@ -13,6 +13,8 @@ export interface Track {
   intentUntil: number;
   score: number;
   parts: ScoreParts | null;
+  /** Camera checks in a row with nobody there. Unset until someone has been seen. */
+  absent?: number;
 }
 export interface Tick { now: number; active: boolean; category: Category; switches: number; slouching: boolean | null }
 
@@ -54,5 +56,5 @@ export function step(prev: Track, t: Tick): { track: Track; nudge: "doom" | "com
 
 export function toPacket(date: string, d: Day, demo: boolean, generatedAt: number, device: DevicePacket["device"] = "laptop"): DevicePacket {
   const { nudges: _, ...rest } = d;
-  return { v: 1, device, date, generatedAt, demo, ...rest, slouchMin: null, presenceMin: null, breaks: null, blinkPerMin: null, sleepMin: null };
+  return { v: 1, device, date, generatedAt, demo, ...rest, slouchMin: d.slouchMin ?? null, presenceMin: d.presenceMin ?? null, breaks: d.breaks ?? null, blinkPerMin: null, sleepMin: null };
 }

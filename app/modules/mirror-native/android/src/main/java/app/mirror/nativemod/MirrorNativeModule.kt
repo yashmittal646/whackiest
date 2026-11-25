@@ -1,11 +1,7 @@
 package app.mirror.nativemod
 
-import android.app.AppOpsManager
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.os.Process
 import android.provider.Settings
 import android.util.Base64
 import expo.modules.kotlin.exception.Exceptions
@@ -51,11 +47,7 @@ class MirrorNativeModule : Module() {
       b64(m.doFinal(raw(data)))
     }
 
-    Function("hasUsageAccess") {
-      val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-      @Suppress("DEPRECATION")
-      ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName) == AppOpsManager.MODE_ALLOWED
-    }
+    Function("hasUsageAccess") { Usage.allowed(context) }
 
     Function("openUsageSettings") {
       context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -63,34 +55,21 @@ class MirrorNativeModule : Module() {
 
     /** Foreground spans between two times. Returned to JS, used in memory, never stored. */
     AsyncFunction("usage") { from: Double, to: Double ->
-      val start = from.toLong()
-      val end = to.toLong()
-      val manager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-      // Look back two hours so an app already open at the start is seen.
-      val events = manager.queryEvents(start - 2 * 3600_000L, end)
-      val out = mutableListOf<Map<String, Any>>()
-      var pkg: String? = null
-      var since = 0L
-      fun close(at: Long) {
-        val p = pkg
-        if (p != null && at > start && at > since) out.add(mapOf("pkg" to p, "start" to maxOf(since, start).toDouble(), "end" to at.toDouble()))
-        pkg = null
-      }
-      val e = UsageEvents.Event()
-      while (events != null && events.hasNextEvent()) {
-        events.getNextEvent(e)
-        when (e.eventType) {
-          UsageEvents.Event.ACTIVITY_RESUMED -> if (e.packageName != pkg) {
-            close(e.timeStamp)
-            pkg = e.packageName
-            since = e.timeStamp
-          }
-          UsageEvents.Event.ACTIVITY_PAUSED -> if (e.packageName == pkg) close(e.timeStamp)
-          UsageEvents.Event.SCREEN_NON_INTERACTIVE, UsageEvents.Event.KEYGUARD_SHOWN, UsageEvents.Event.DEVICE_SHUTDOWN -> close(e.timeStamp)
-        }
-      }
-      close(end)
-      out
+      Usage.spans(context, from.toLong(), to.toLong()).map { mapOf("pkg" to it.pkg, "start" to it.start.toDouble(), "end" to it.end.toDouble()) }
     }
+
+    /** Live nudges. `config` holds the scoring spec and the app categories. */
+    AsyncFunction("startWatch") { config: String ->
+      WatchService.prefs(context).edit().putString("config", config).putBoolean("on", true).commit()
+      WatchService.start(context)
+      Unit
+    }
+    AsyncFunction("stopWatch") { forget: Boolean ->
+      val edit = WatchService.prefs(context).edit()
+      (if (forget) edit.clear() else edit.putBoolean("on", false)).commit()
+      WatchService.stop(context)
+    }
+    Function("watchOn") { WatchService.prefs(context).getBoolean("on", false) }
+    Function("testNudge") { WatchService.nudge(context, true) }
   }
 }

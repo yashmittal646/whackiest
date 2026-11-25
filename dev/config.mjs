@@ -26,6 +26,7 @@ export async function privacyGate() {
   for (const dir of ["shared/src", "extension/src", "web/src", "app/src", "ui"]) for (const f of await readdir(root(dir))) {
     const text = await readFile(root(`${dir}/${f}`), "utf8");
     const bad = capture.exec(text) ?? (`${dir}/${f}` === "shared/src/cloud.ts" ? null : network.exec(text));
+    if (/getUserMedia/.test(text) && `${dir}/${f}` !== "extension/src/camera.ts") throw new Error(`Privacy check failed: camera use in ${dir}/${f}`);
     if (bad) throw new Error(`Privacy check failed: ${bad[0]} in ${dir}/${f}`);
   }
 }

@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mirror: posture</title><link rel="stylesheet" href="eye.css"><link rel="stylesheet" href="style.css"></head>
+<body class="page"><h1>Sit up</h1>
+<p>Mirror learns your good posture, then looks for six seconds every five minutes. It looks every 12 seconds during a demo. Your camera light comes on each time.</p>
+<p>The check runs on this laptop. No picture is saved or sent. Mirror keeps your baseline proportions, the last result, and daily estimates of slouching, desk time and breaks. This isn't medical advice.</p>
+<p id="state" role="status"></p><p id="error" class="error" role="alert"></p>
+<video id="v" playsinline hidden></video>
+<div class="row"><button id="start" class="primary">Turn on the camera</button><button id="save" class="primary" hidden>This is my good posture</button><button id="stop" class="danger" hidden>Turn posture off</button></div>
+<script type="module" src="posture.js"></script></body></html>

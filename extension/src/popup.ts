@@ -47,4 +47,5 @@ onState(async () => {
 $("intent").onclick = () => void send({ cmd: "intent" });
 $("demo").onclick = async () => { await send({ cmd: (await load()).demo ? "demo-off" : "demo-on" }); };
 $("share").onclick = () => void chrome.tabs.create({ url: "account.html" });
+$("posture").onclick = () => void chrome.tabs.create({ url: "posture.html" });
 $("privacy").onclick = () => void chrome.tabs.create({ url: "privacy.html" });
