@@ -1,379 +1,118 @@
-<div align="center">
+# Mirror
 
-# 🪞 Mirror
+Mirror tracks doom-scrolling across a laptop and a phone, and shows how it lines up with your sleep.
 
-### *Your attention doesn't stop at one screen. Neither does Mirror.*
+It has three parts:
 
-**A privacy-first, cross-device attention and habit intelligence system.**
-Android app + Chrome extension + report website · Encrypted on your devices before it syncs.
+- a **Chrome extension** that scores what you're doing in the browser, watches your posture and eyes through the webcam if you allow it, and nudges you;
+- an **Android app** that does the same for phone apps, reads your sleep from Health Connect, and puts a nudge card over the app you're in;
+- a **report website** that combines both devices into one report.
 
----
+Most of the work happens on your own devices. If you make an account, each day's totals are encrypted on the device before they're synced, so the server only stores data it can't read.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#)
-[![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)](#)
-[![Extension: Chrome MV3](https://img.shields.io/badge/Extension-Chrome%20MV3-yellow.svg)](#)
-[![Privacy: Encrypted sync](https://img.shields.io/badge/Privacy-Encrypted%20sync-red.svg)](#)
+## Why we built it
 
-</div>
+Screen-time tools count minutes on one device. That misses the pattern we kept seeing in ourselves: studying on the laptop, drifting to YouTube, closing the laptop at midnight and then picking up the phone in bed. Mirror follows that hand-off between screens and puts it next to how long you actually slept.
 
----
+## What it does
 
-## What is Mirror?
+### In the browser
 
-Most screen-time tools look at one device and show you a number. Mirror looks at **all your screens together** — your phone, your laptop — and connects the habit to the night you lose.
+- Gives each minute a **doom score from 0 to 100**, based on what kind of page you're on, how often you switch tabs, how long you've been on feeds, the time of night, and posture.
+- Tells **studying** from **time-wasting**. PDFs, Google Docs and Drive, course sites, GitHub, Stack Overflow and Wikipedia count as studying. Feeds, Shorts and streaming count as time-wasting. YouTube is sorted by the video's own category: Education, Science & Technology and How-to count as learning, Music counts as listening, and Gaming or Entertainment count as time-wasting.
+- If you switch to a time-wasting site and stay **25 seconds**, it covers the page with a card. The card pauses the video and gives three choices: go back to what you were studying, close the tab, or say you're there on purpose (which quiets it for that site).
+- Other nudges: after a long scroll, when you're slouching (two checks in a row), when you blink much less or much more than usual, when you look drowsy, and after 90 minutes at the desk.
+- **Posture** (optional): you show it your good posture once, then it checks for 6 seconds every 5 minutes. It notices your head dropping, leaning into the screen, your head bending down, hunched shoulders and tilt. There's a live view so you can see what it tracks, and a strictness setting.
+- **Eyes and face** (optional): every 20 minutes, 20 seconds of blink rate, drowsiness (eyes closing, yawning), whether you're facing the screen, and restlessness. Facial expression (smiling, frowning, neutral) is a separate opt-in, and it's reported as an expression, not a feeling.
+- A demo mode with a fast clock and separate, clearly labelled data.
 
-It watches how you scroll, how you sit, how often you blink, and when your attention shifts from your laptop to your phone after midnight. Then it tells you what it found in plain language: *"On nights you use both devices after 11 PM, you sleep about 18 minutes less."*
+### On the phone
 
-Scoring and nudges work without an account. If you sign in, daily totals are **encrypted on your device**, synced, and joined into one report. QR and file transfer remain as a backup. You can export or delete everything.
+- Reads which app is open (through Android's usage access) and turns it into daily totals. App names aren't stored.
+- Shows today's doom minutes, screen time, minutes after 23:00, and a bar of time spent studying against time on time-wasters. A Mirror day runs from 04:00 to 04:00, so 1 AM still counts towards the day before.
+- Checks every few seconds while the screen is on. If you open Instagram, Reddit, Snapchat or similar and stay 25 seconds, it draws a card over the app with **Back to Google Drive** (or whichever study app you were in), **Close this app** and **I'm here on purpose**.
+- YouTube is judged by the title of the video that's playing. This is optional and needs notification access; without it YouTube never triggers a nudge.
+- Sleep comes from Health Connect, or you can type it in.
+- A 10-second posture check and a 20-second eyes-and-face check, both with a live camera view.
 
-> **Prototype note:** recovery phrases are two words for now. That is too short to resist someone guessing offline with a copy of the database, so do not claim "even we can't read it" until it is lengthened.
+### On the website
 
----
+- An interactive landing page, including a doom-score demo that uses the real formula and a demo of what the server actually receives when a day is encrypted.
+- The report: insight cards, your nights, the **hand-off chart** (laptop and phone doom-scrolling by hour, so you can see the switch around midnight), and desk data (slouching, time at the desk, breaks, blinks).
+- Export everything, import a file, or delete your account and all cloud data.
 
-## Features
+## How the insights work
 
-### 📱 Android App — the Brain
+The report fits a simple linear regression for a handful of questions, such as whether late-night use across both devices goes with less sleep, or whether doom-scrolling goes with slouching. It only shows a result after at least 10 nights with laptop, phone and sleep data, corrects for testing several questions at once (Benjamini–Hochberg), and words it as an association with the number of nights, never as a cause. We checked the numbers against an independent calculation in SciPy and they match.
 
-#### Doom-Scroll Detection
-- Monitors foreground app usage via Android AccessibilityService
-- Computes a **live doom-scroll score (0–100)** every minute using:
-  - Tab / app switch rate (rapid hopping = higher score)
-  - Time of day (late-night amplifies score)
-  - Content type (social feeds, short-video apps flagged)
-  - Posture signal (slouching while scrolling = combined trigger)
-- Configurable watched-app list (Twitter/X, Instagram, YouTube Shorts, Reddit, TikTok, etc.)
+## Privacy
 
-#### Smart Nudges
-- **Doom nudge**: fires when score ≥ 60 for 15+ consecutive minutes
-- **Combined trigger**: doom score ≥ 60 *and* slouching → "You've been hunched and scrolling. Quick reset?" (much stronger signal than either alone)
-- **Wind-down nudge**: personalized time computed from your own sleep correlation — not a generic 10 PM reminder
-- **Eye break nudge**: fires when blink rate drops or face gets closer to screen
-- **Stand-up nudge**: fires after 90+ minutes of detected desk presence with no break
-- All nudges have a 15-minute cooldown — no notification spam
-- One-tap "I'm here on purpose" intent mode that pauses nudges for 20 minutes
+- **No pictures or video are stored or sent.** Camera frames go straight into the pose or face model in memory, become a few numbers, and are dropped. There's no code that saves images, and the build fails if any appears.
+- The extension can only talk to our sync server. All network code lives in one file (`shared/src/cloud.ts`); the build fails if it shows up anywhere else.
+- The pose and face models ship inside the extension and the app. Nothing is downloaded at runtime, and we removed MediaPipe's usage logging from the Android build.
+- Synced records are encrypted on the device with AES-256-GCM. The key is protected by your recovery words (PBKDF2, 600,000 rounds). Every day is padded to the same size, and record IDs are scrambled, so the server can't see dates, minutes or app names.
+- The server does see your email, your IP address, when you sync, and how many records you have.
+- In Supabase, row-level security means each account can only touch its own rows. A script in `dev/` tests this against the live project with two throwaway accounts.
 
-#### Sleep Correlation Engine
-- Reads nightly sleep data from **Health Connect** (or nights you type in; screen-off time is not used, because late phone use shortens it by itself)
-- Correlates doom-scroll minutes, late-night usage, and cross-device patterns with actual sleep
-- Runs **on-device linear regression** nightly — no ML cloud API
-- Surfaces insights only when statistically meaningful (p < 0.1, |r| > 0.3)
+**Not ready for real users yet:** recovery phrases are only two words, which is fine for a demo but too easy to guess with a copy of the database. Raise it to six before anyone relies on it.
 
-#### Cross-Device Insights
-- After importing a desktop packet, the nightly engine runs combined hypotheses:
-  - *Does total late-night screen time (phone + laptop) affect sleep?*
-  - *Is laptop-heavy late-night use worse than phone-only?*
-  - *Do doom minutes correlate with next-day energy?*
-  - *Do you slouch more when you're doom-scrolling?*
-  - *Does long sitting correlate with fewer steps?*
-- Results shown as plain-language insight cards with effect sizes
+## Tech
 
-#### Hand-off Chart
-- Stacked hourly bar chart showing **laptop doom minutes (blue) + phone doom minutes (orange)** side by side for every hour of the day
-- Visualises the moment your attention "hands off" from screen to screen around midnight
-- This is the story of Mirror in one image
+| Part | Built with |
+| --- | --- |
+| Shared engine | TypeScript: scoring, activity sorting, posture, blinks, face, sleep, insights, encryption |
+| Extension | Chrome Manifest V3, service worker, offscreen document for the camera, esbuild |
+| Website | Plain TypeScript and hand-written SVG and canvas, esbuild |
+| Android app | Expo 58 / React Native, plus a Kotlin module for usage stats, the overlay card, CameraX, Health Connect and media titles |
+| Vision | MediaPipe Pose Landmarker and Face Landmarker, run on the device |
+| Sync | Supabase (Postgres with row-level security, and Auth) |
+| Tests | `node --test`, JUnit, Puppeteer with a fake camera |
 
-#### Posture Check (Session Mode)
-- User-initiated 10-second camera session using CameraX + MediaPipe Pose
-- Detects: head pitch (text-neck), face distance from screen, shoulder tilt
-- Calibrated to **your own good posture** — not generic angles
-- Results: slouch%, lean-in%, average head pitch
-- History chart of posture scores over the week
-- **Zero frames stored** — raw pixels exist only in memory, discarded frame-by-frame
-
-#### Privacy Screen
-- Full audit log of every data point collected
-- **Camera transparency log**: timestamp · session duration · frames analyzed · frames stored (always 0)
-- Proof: one of your own records shown as the server sees it, encrypted
-- **Export**: generate a local JSON archive of all your data
-- **Wipe**: single tap deletes every row from every table, clears all preferences
-
-#### QR Packet Import (from Desktop)
-- Scan the QR code shown by the Chrome extension
-- Imports today's desktop session data (doom minutes, posture, presence, blink rate, hourly breakdown)
-- Validates schema and bounds before storing — treats scanned data as untrusted input
-- File import fallback: accepts `.json` shared via Nearby Share, AirDrop, or Bluetooth
-
----
-
-### 🖥️ Chrome Extension — the Thin Desktop Sensor
-
-> The extension has **no full dashboard**. It is a sensor. The brain is the phone.
-
-#### Live Doom Score
-- Content script tracks active tab, URL, and tab-switch frequency every minute
-- Background service worker computes doom score using the same algorithm as the app (shared TypeScript package)
-- Score updates in the extension popup in real time
-- Knows what kind of thing you are doing: reading a PDF, studying in Google Docs/Drive, Coursera, GitHub and similar, or time-wasting on feeds and streaming
-- YouTube is judged by the video's own category (Education, Science & Technology and How-to count as learning; Gaming, Music, Entertainment and others do not), with the title as a fallback. Nothing about the video is stored
-- **On-screen nudges**: on time-wasting sites the nudge is a card over the page that pauses the video, with "Back to studying", "Close this tab" and "I'm here on purpose". Elsewhere it is a system notification
-- **Switch alert**: 25 seconds after you switch to a time-waster and stay there, a quick "Still what you came for?" (at most one every 2 minutes, can be turned off in the popup)
-
-#### Posture Monitoring (Laptop Camera)
-- Runs in an **offscreen document** (required for `getUserMedia` in MV3)
-- **6-second bursts at 2 fps every 5 minutes** using MediaPipe Pose Landmarker Lite
-- Detects: shoulder tilt, head drop, forward lean
-- Calibrated to your own baseline on first setup
-- Presence detection: "someone at the desk" vs empty seat
-- Break detection: 5+ consecutive absence samples = break counted
-- All models bundled inside the extension — nothing loaded from a CDN
-
-#### Blink Rate Monitoring
-- Separate **20-second bursts at 12 fps every 20 minutes** using MediaPipe Face Landmarker
-- Reads `eyeBlinkLeft` / `eyeBlinkRight` blendshape scores
-- Average blink rate added to the daily packet
-- Low blink rate → 20-20-20 eye break reminder
-
-#### Smart Nudges (Desktop)
-- Notification-based nudge when doom score ≥ 60
-- Combined nudge when doom ≥ 60 *and* slouching detected
-- Intent mode: "I'm here on purpose" button on the notification
-- 15-minute cooldown between nudges
-
-#### QR Packet Export
-- Builds a `DevicePacket` summary of the day: doom minutes, late-night minutes, hourly breakdown, posture, presence, breaks, blink rate
-- Renders it as a **QR code** the phone can scan (no network involved — data crosses by camera)
-- File export fallback: downloads `mirror-YYYY-MM-DD.json` for manual transfer
-
-#### Privacy Guarantees (Extension)
-- `host_permissions: []` and a `connect-src` CSP that allows only the sync server
-- Network code is allowed in one shared file (`cloud.ts`); the build fails if it appears elsewhere
-- **CI grep** fails the build if `MediaRecorder`, `toDataURL`, `toBlob`, `captureStream`, or `Bitmap.compress` appear in camera module files
-- Bystander discard: frames with more than one person detected are skipped
-- Camera indicator (browser LED) shows the camera is on during bursts
-
----
-
-### 🔗 Cross-Device Architecture
-
-#### One Brain, Two Sensors
-```
-┌─────────────────────────────┐     QR code / file     ┌──────────────────────────────┐
-│   Chrome Extension          │  ──────────────────▶   │   Android App (the brain)    │
-│   (desktop sensor)          │                         │                              │
-│                             │                         │  Room/SQLite database        │
-│  • Live doom score          │   DevicePacket          │  Insight engine              │
-│  • Posture bursts           │  ┌──────────────┐       │  Sleep correlation           │
-│  • Blink rate               │  │ screenMin    │       │  Cross-device insights       │
-│  • Presence & breaks        │  │ doomMin      │       │  Nudges & wind-down          │
-│  • QR export                │  │ lateNightMin │       │  Privacy screen & wipe       │
-│                             │  │ hourlyDoom[] │       │                              │
-└─────────────────────────────┘  │ slouchMin    │       └──────────────────────────────┘
-                                 │ blinkPerMin  │
-                                 └──────────────┘
-```
-
-#### Optional Encrypted Sync
-| What you might expect | What Mirror does instead |
-|-----------------------|--------------------------|
-| Readable data in the cloud | Records encrypted on the device before upload |
-| Server-side analytics | Report computed in your browser or phone |
-| CDN-hosted ML models | Models bundled inside the extension & app |
-| Account required | Account only needed for sync |
-
-The server still sees your email, IP address, sync times and number of records.
-
----
-
-## Privacy Design
-
-> **"Never stored" beats "deleted after analysis."**
-
-| Sensor | What is collected | What is stored | What is never stored |
-|--------|-------------------|----------------|---------------------|
-| Accessibility (phone) | Foreground app package name | Per-minute rows with doom score | App content, text, keystrokes |
-| Camera (laptop) | 6s video bursts | 3 derived numbers per burst (tilt, drop, lean) | Frames, landmarks, face embeddings |
-| Camera (phone) | 10s user-initiated session | Slouch%, lean%, head pitch (session avg) | Frames, landmarks |
-| Face (optional) | 20s video burst | Blink rate, drowsiness, focus share, restlessness; expression label only if switched on (kept on the laptop) | Frames, identity, feelings |
-| Browser tabs (extension) | Category, switch count | Daily totals | Sites, URLs, page content |
-| Health Connect | Sleep session durations | Daily sleep minutes | Heart rate, location, other health data |
-
-**What Mirror explicitly refuses to do:**
-- Emotion, mood, or affect inference from faces
-- Age or demographic estimation
-- Face recognition or identity matching
-- Any network request except to the sync server
-- Background camera use on Android (blocked by OS; Mirror uses session mode)
-
----
-
-## Tech Stack
-
-### Android App
-| Layer | Technology |
-|-------|-----------|
-| Framework | React Native (Expo) |
-| Native modules | Kotlin (AccessibilityService, CameraX, Health Connect) |
-| Database | Expo SQLite (Room-compatible schema) |
-| Camera ML | MediaPipe Tasks Vision (PoseLandmarker, bundled) |
-| Charts | Victory Native / React Native Gifted Charts |
-| QR Scanner | Expo Barcode Scanner (Google ML Kit, no camera permission needed for scanning) |
-
-### Chrome Extension
-| Layer | Technology |
-|-------|-----------|
-| Manifest | MV3 |
-| Build | esbuild |
-| Language | TypeScript |
-| Camera ML | MediaPipe Tasks Vision WASM (bundled, no CDN) |
-| QR Generation | `qrcode` npm package (bundled) |
-| Storage | Chrome Storage API (IndexedDB via idb) |
-
-### Shared (`shared/` workspace package)
-| Module | Purpose |
-|--------|---------|
-| `score.ts` | `doomScore()` — identical algorithm in app and extension |
-| `insights.ts` | Hypothesis engine, Pearson correlation, effect formatting |
-| `packet.ts` | `DevicePacket` type, validation helpers |
-| `scoring-spec.json` | Weights, thresholds, windows (single source of truth) |
-| `test-vectors.json` | Sample inputs + expected score ranges, run as CI unit tests in both codebases |
-
----
-
-## Monorepo Structure
+## Layout
 
 ```
-mirror/
-├── shared/                     # Pure TypeScript — imported by both app + extension
-│   ├── score.ts
-│   ├── insights.ts
-│   ├── packet.ts
-│   ├── schema.ts
-│   ├── scoring-spec.json
-│   └── test-vectors.json
-│
-├── app/                        # React Native (Expo) Android app
-│   ├── android/app/src/main/
-│   │   └── java/.../
-│   │       ├── AccessibilityModule.kt
-│   │       ├── PostureModule.kt
-│   │       └── HealthConnectModule.kt
-│   └── src/
-│       ├── db/                 # SQLite schema + DAOs
-│       ├── services/           # nightly job, nudge scheduler
-│       ├── screens/            # all RN screens
-│       └── components/         # charts, overlays, QR scanner
-│
-└── extension/                  # Chrome MV3 extension
-    ├── src/
-    │   ├── content.ts
-    │   ├── background.ts
-    │   ├── camera.ts           # offscreen document
-    │   ├── packet.ts
-    │   └── popup/
-    └── mediapipe/              # bundled WASM + .task model files
+shared/      the engine all three parts use (score, activity, posture, blink, face,
+             sleep, insights, vault, cloud), plus the scoring spec and app lists
+extension/   Chrome extension
+web/         landing page and report website
+app/         Android app (Expo) and its Kotlin module in app/modules/mirror-native
+ui/          the Mirror eye, shared by the website and extension
+models/      bundled MediaPipe models
+supabase/    database tables and access rules
+dev/         config and privacy checks, a mock server, live database tests
 ```
 
----
+## Running it
 
-## Build & Run
+You need Node 22.18 or newer. For the Android app you also need Java 17 and the Android SDK.
 
-### Prerequisites
-- Node 22.18+ and npm
-- Chrome 120+ (for MV3 offscreen document support)
-- For the Android app: Java 17 and the Android SDK
-
-### Setup
 ```bash
 git clone https://github.com/yashmittal646/whackiest.git
 cd whackiest
 npm install
-npm run check               # types, tests and builds
+npm run check        # typecheck, tests, builds
 ```
 
-### Chrome Extension
-`npm run build`, then in Chrome: chrome://extensions → Developer mode → Load unpacked → select `extension/dist`.
+- **Extension:** after `npm run build`, open `chrome://extensions`, turn on Developer mode, choose **Load unpacked** and select `extension/dist`.
+- **Website:** `npm run dev -w web`, then open http://127.0.0.1:5180.
+- **Android:**
+  ```bash
+  cd app
+  npm run prepare_android
+  cd android
+  ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+  adb install -r app/build/outputs/apk/release/app-release.apk
+  ```
 
-### Report Website
-```bash
-npm run dev -w web          # http://127.0.0.1:5180
-```
+Sync needs a Supabase project: run `supabase/schema.sql` in its SQL editor and put the project URL and publishable key in `mirror.config.json`. Everything else works without it.
 
-### Android App
-```bash
-cd app
-npm run prepare_android     # generates the android/ folder
-cd android
-./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
-adb install -r app/build/outputs/apk/release/app-release.apk
-```
+## What's missing
 
----
-
-## Demo Flow
-
-1. **Extension popup** — browse Twitter. Watch the live doom score climb.
-2. **Nudge fires** — *"You've been hunched and scrolling. Quick reset?"* — dismiss with "I'm here on purpose."
-3. **Extension account page** — click "Sync now".
-4. **Report website** — press Refresh. The day joins the labelled sample nights, and the insight card shows an association with the number of nights.
-5. **Hand-off chart** — laptop bars taper off at 23:40 as phone bars pick up. The story, in one image.
-6. **Privacy screen** — camera log shows "0 frames stored". A record is shown as the server sees it, encrypted.
-7. **Export → Wipe** — one tap. Everything gone.
-
-**Fallback if sync fails:** import the `.json` file on the website. Practice this too.
-
----
-
-## Insight Examples
-
-> All insights are computed on-device from your own data. Seeded demo data is clearly labelled.
-
-- *"On nights you scroll for 2+ hours, you fall asleep about 23 minutes later."*
-- *"Your late-night laptop use predicts worse sleep more strongly than your phone use."*
-- *"On days you doom-scroll more, you slouch about 2× as long."*
-- *"You take 800 fewer steps on days you sit at your desk for 3+ hours."*
-- *"Your blink rate drops 40% in the last hour before you close the laptop."*
-
----
-
-## What Mirror Does Not Do
-
-- ❌ Read app content, notifications, or keystrokes
-- ❌ Access location, contacts, or microphone
-- ❌ Store any camera frame, landmark, or face embedding
-- ❌ Infer emotions, mood, age, or identity
-- ❌ Make network requests to anything but the sync server
-- ❌ Require an account (only sync needs one)
-- ❌ Upload sites, app names, camera frames or any unencrypted record
-
----
-
-## Hackathon Build Order (Atomic Sequence)
-
-| # | Task | Who |
-|---|------|-----|
-| 1 | Monorepo + shared schema + test vectors | All |
-| 2 | `doomScore()` + unit tests (CI green) | B |
-| 3 | AccessibilityService → JS events | A |
-| 4 | Minute log DB + aggregation | B |
-| 5 | Extension: content script → doom score | C |
-| 6 | App: home screen with live doom score | D |
-| 7 | Extension: nudge notification | C |
-| 8 | App: doom-scroll nudge overlay | B/D |
-| 9 | Extension: MediaPipe posture bursts | C |
-| 10 | App: nightly job → insight engine | B |
-| 11 | App: insight cards screen | D |
-| 12 | Extension: QR packet builder | C |
-| 13 | App: QR scanner + cross-device join | A/D |
-| 14 | App: hand-off chart | D |
-| 15 | App + Extension: Privacy screen + camera log | D/C |
-| 16 | Demo data seeder (21 days) | D |
-| 17 | Health Connect sleep bridge | A |
-| 18 | App: posture check session (phone camera) | A |
-| 19 | Extension: blink rate bursts | C |
-| 20 | Polish, bug bash, demo rehearsal | All |
-
-> **Steps 1–13 are your demo.** Everything else is gravy.
-
----
-
-## Team
-
-Built at [Hackathon Name] by [Your Team Name].
-
----
-
-<div align="center">
-
-*"Wearables give you numbers. Mirror connects the habit across all your screens to the night you lose, encrypted before it leaves your devices."*
-
-</div>
+- The website isn't hosted yet.
+- A phone joins by typing the recovery words; QR pairing isn't built.
+- No personalised wind-down reminder yet.
+- Face and blink results stay on the laptop and aren't in the report.
+- Phone camera checks only run when you tap; Android doesn't allow background camera use.
+- After the phone restarts, open Mirror once to turn nudges back on.
+- The posture, blink and drowsiness limits are sensible starting points, not clinically tuned.
+- Android only for now; no iOS app or non-Chrome extension.
