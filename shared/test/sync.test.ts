@@ -22,7 +22,8 @@ test("a missing device is unknown, not zero", () => {
   assert.equal(r.nights[0]!.phoneLateMin, null);
   assert.equal(r.nights[0]!.doomMin, null);
   assert.equal(hourly([], "phone", null), null);
-  assert.deepEqual(r.insights, []);
+  // Sleep insights need the phone; the laptop-only slouch insight may remain.
+  assert.deepEqual(r.insights.map((i) => i.id).filter((id) => id !== "slouch-doom"), []);
 });
 test("phrase shape", () => assert.match(newPhrase(), /^[a-z]+-[a-z]+$/));
 

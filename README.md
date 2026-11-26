@@ -53,7 +53,7 @@ Scoring and nudges work without an account. If you sign in, daily totals are **e
 - One-tap "I'm here on purpose" intent mode that pauses nudges for 20 minutes
 
 #### Sleep Correlation Engine
-- Reads nightly sleep data from **Health Connect** (falls back to screen-off intervals)
+- Reads nightly sleep data from **Health Connect** (or nights you type in; screen-off time is not used, because late phone use shortens it by itself)
 - Correlates doom-scroll minutes, late-night usage, and cross-device patterns with actual sleep
 - Runs **on-device linear regression** nightly — no ML cloud API
 - Surfaces insights only when statistically meaningful (p < 0.1, |r| > 0.3)
@@ -103,6 +103,10 @@ Scoring and nudges work without an account. If you sign in, daily totals are **e
 - Content script tracks active tab, URL, and tab-switch frequency every minute
 - Background service worker computes doom score using the same algorithm as the app (shared TypeScript package)
 - Score updates in the extension popup in real time
+- Knows what kind of thing you are doing: reading a PDF, studying in Google Docs/Drive, Coursera, GitHub and similar, or time-wasting on feeds and streaming
+- YouTube is judged by the video's own category (Education, Science & Technology and How-to count as learning; Gaming, Music, Entertainment and others do not), with the title as a fallback. Nothing about the video is stored
+- **On-screen nudges**: on time-wasting sites the nudge is a card over the page that pauses the video, with "Back to studying", "Close this tab" and "I'm here on purpose". Elsewhere it is a system notification
+- **Switch alert**: 25 seconds after you switch to a time-waster and stay there, a quick "Still what you came for?" (at most one every 2 minutes, can be turned off in the popup)
 
 #### Posture Monitoring (Laptop Camera)
 - Runs in an **offscreen document** (required for `getUserMedia` in MV3)
@@ -179,7 +183,7 @@ The server still sees your email, IP address, sync times and number of records.
 | Accessibility (phone) | Foreground app package name | Per-minute rows with doom score | App content, text, keystrokes |
 | Camera (laptop) | 6s video bursts | 3 derived numbers per burst (tilt, drop, lean) | Frames, landmarks, face embeddings |
 | Camera (phone) | 10s user-initiated session | Slouch%, lean%, head pitch (session avg) | Frames, landmarks |
-| Face (blink rate) | 20s video burst | 1 number (blink/min) | Frames, identity, emotions |
+| Face (optional) | 20s video burst | Blink rate, drowsiness, focus share, restlessness; expression label only if switched on (kept on the laptop) | Frames, identity, feelings |
 | Browser tabs (extension) | Category, switch count | Daily totals | Sites, URLs, page content |
 | Health Connect | Sleep session durations | Daily sleep minutes | Heart rate, location, other health data |
 

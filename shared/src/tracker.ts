@@ -2,7 +2,7 @@ import type { DevicePacket } from "./packet.ts";
 import { doomScore, isLateNight, scoreParts, spec, type Category, type ScoreInput, type ScoreParts } from "./score.ts";
 import { dayKey } from "./time.ts";
 
-export interface Day { screenMin: number; doomMin: number; lateNightMin: number; lateDoomMin: number; hourlyDoom: number[]; switches: number; nudges: number; slouchMin?: number; presenceMin?: number; breaks?: number }
+export interface Day { screenMin: number; doomMin: number; lateNightMin: number; lateDoomMin: number; hourlyDoom: number[]; switches: number; nudges: number; slouchMin?: number; presenceMin?: number; breaks?: number; blinkSum?: number; blinkChecks?: number; faceChecks?: number; focusSum?: number; drowsyChecks?: number }
 export interface Track {
   days: Record<string, Day>;
   /** Switch counts for the last few minutes. No sites are kept. */
@@ -15,6 +15,9 @@ export interface Track {
   parts: ScoreParts | null;
   /** Camera checks in a row with nobody there. Unset until someone has been seen. */
   absent?: number;
+  /** Desk minutes since the last break, and when the last camera check was. */
+  seat?: number;
+  seen?: number;
 }
 export interface Tick { now: number; active: boolean; category: Category; switches: number; slouching: boolean | null }
 
@@ -55,6 +58,7 @@ export function step(prev: Track, t: Tick): { track: Track; nudge: "doom" | "com
 }
 
 export function toPacket(date: string, d: Day, demo: boolean, generatedAt: number, device: DevicePacket["device"] = "laptop"): DevicePacket {
-  const { nudges: _, ...rest } = d;
-  return { v: 1, device, date, generatedAt, demo, ...rest, slouchMin: d.slouchMin ?? null, presenceMin: d.presenceMin ?? null, breaks: d.breaks ?? null, blinkPerMin: null, sleepMin: null };
+  // Face results stay on this laptop: they are not part of the shared packet.
+  const { nudges: _, blinkSum: _s, blinkChecks: _c, faceChecks: _f, focusSum: _o, drowsyChecks: _d, ...rest } = d;
+  return { v: 1, device, date, generatedAt, demo, ...rest, slouchMin: d.slouchMin ?? null, presenceMin: d.presenceMin ?? null, breaks: d.breaks ?? null, blinkPerMin: d.blinkChecks ? Math.round((d.blinkSum! / d.blinkChecks) * 10) / 10 : null, sleepMin: null };
 }

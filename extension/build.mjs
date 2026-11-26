@@ -13,10 +13,10 @@ await build({
 });
 await cp(here("static"), here("dist"), { recursive: true });
 await addUi(here("dist"));
-// The pose model ships inside the extension. Nothing is fetched from elsewhere.
+// The models ship inside the extension. Nothing is fetched from elsewhere.
 const vision = fileURLToPath(new URL(".", import.meta.resolve("@mediapipe/tasks-vision")));
 for (const f of ["vision_wasm_internal.js", "vision_wasm_internal.wasm"]) await cp(`${vision}wasm/${f}`, `${here("dist")}/vision/${f}`);
-await cp(here("models/pose_landmarker_lite.task"), here("dist/vision/pose_landmarker_lite.task"));
+for (const f of ["pose/pose_landmarker_full.task", "face/face_landmarker.task"]) await cp(here(`../models/${f}`), here(`dist/vision/${f.split("/")[1]}`));
 // The only address the extension may contact is our own sync server.
 const m = JSON.parse(await readFile(here("static/manifest.json"), "utf8"));
 const csp = m.content_security_policy;

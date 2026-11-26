@@ -30,6 +30,14 @@ phone-viewable demo that scans it and shows the insight card and hand-off chart.
 - Insights say "associated with", show number of nights, correct for multiple tests.
 - The Android app now needs INTERNET for sync; allow only the sync server.
 - Extension: no content script; `tabs` permission + strict CSP (+ 'wasm-unsafe-eval' for MediaPipe).
+- 2026-11-26, user's request: the extension may read YouTube's video category from the page
+  (host permission for youtube.com only, chrome.scripting) and tab titles, to tell study from waste.
+  Classified in memory, never stored. No frame analysis of videos.
+- 2026-11-26, user's request: nudges show as a card drawn over the page (chrome.scripting) on a fixed
+  list of time-waste sites (host permissions for those only); notification elsewhere. Card reads nothing.
+- 2026-11-26, user chose "states + expressions": face check reports drowsiness, focus, restlessness,
+  closeness; expression (smiling/frowning/neutral) only with a separate opt-in, labelled as an
+  expression, never as a mood. Face results stay on the laptop (not in packets).
 - Phone usage: UsageStats + foreground service instead of AccessibilityService.
 - Package names cannot identify YouTube Shorts; do not claim it.
 - Blink bursts at ~30 fps, not 12. Use expo-camera, not expo-barcode-scanner.

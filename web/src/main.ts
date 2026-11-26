@@ -113,7 +113,7 @@ function render(): void {
 
   const ready = r.nights.filter((n) => n.sleepMin !== null && n.laptopLateMin !== null && n.phoneLateMin !== null).length;
   $("cards").replaceChildren(...(r.insights.length
-    ? r.insights.slice(0, 3).map((i) => card(i.text, `${i.demo ? "Sample data. " : ""}An association, not proof of cause. r = ${i.r.toFixed(2)}, adjusted p ${i.pAdjusted < 0.001 ? "< 0.001" : "= " + i.pAdjusted.toFixed(3)}.`))
+    ? r.insights.slice(0, 4).map((i) => card(i.text, `${i.demo ? "Sample data. " : ""}An association, not proof of cause. r = ${i.r.toFixed(2)}, adjusted p ${i.pAdjusted < 0.001 ? "< 0.001" : "= " + i.pAdjusted.toFixed(3)}.`))
     : [card(ps.length ? "No clear pattern yet." : "Nothing synced yet.", ps.length ? `${ready} of at least ${MIN_NIGHTS} nights have laptop, phone and sleep records.` : "Connect the extension or phone app, then refresh.")]));
 
   const date = night.value || null, l = hourly(ps, "laptop", date), p = hourly(ps, "phone", date);
@@ -132,7 +132,13 @@ function render(): void {
     b.onclick = () => { night.value = n.date === date ? "" : n.date; render(); };
     return b;
   }));
-  const m = (v: number | null) => (v === null ? "no record" : String(v));
+  const m = (v: number | null | undefined) => (v === null || v === undefined ? "no record" : String(v));
+  const mean = (f: (n: (typeof r.nights)[number]) => number | null | undefined) => { const v = r.nights.map(f).filter((x): x is number => x !== null && x !== undefined); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const tile = (v: number | null, unit: string, label: string) => { const d = document.createElement("div"), b = document.createElement("b"), s = document.createElement("span"); b.textContent = v === null ? "–" : `${v}${unit}`; s.textContent = v === null ? `${label}: no camera checks yet` : label; d.append(b, s); return d; };
+  const slouch = mean((n) => n.slouchPct), desk = mean((n) => n.deskMin), breaks = mean((n) => n.breaks), blink = mean((n) => n.blinkPerMin);
+  $("desk").replaceChildren(tile(slouch === null ? null : Math.round(slouch), "%", "of desk time slouching"), tile(desk === null ? null : Math.round(desk / 6) / 10, "h", "at the desk a day"),
+    tile(breaks === null ? null : Math.round(breaks * 10) / 10, "", "breaks a day"), tile(blink === null ? null : Math.round(blink), "", "blinks a minute"));
+  $("desk-days").replaceChildren(table(["Day", "Slouching", "Desk min", "Breaks", "Blinks a minute"], [...r.nights].reverse().map((n) => [n.date, n.slouchPct === null || n.slouchPct === undefined ? "no record" : `${n.slouchPct}%`, m(n.deskMin), m(n.breaks), m(n.blinkPerMin)])));
   $("nights").replaceChildren(table(["Night", "Laptop late min", "Phone late min", "Doom min", "Sleep min"], [...r.nights].reverse().map((n) => [n.date, m(n.laptopLateMin), m(n.phoneLateMin), m(n.doomMin), m(n.sleepMin)])));
   show("report");
 }

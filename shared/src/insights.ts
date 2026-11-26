@@ -1,5 +1,9 @@
 /** One night: predictors are null when not measured. */
-export interface NightRow { date: string; sleepMin: number | null; laptopLateMin: number | null; phoneLateMin: number | null; doomMin: number | null }
+export interface NightRow {
+  date: string; sleepMin: number | null; laptopLateMin: number | null; phoneLateMin: number | null; doomMin: number | null;
+  /** Laptop only, from camera checks. Slouching is a share of desk time; null below half an hour of it. */
+  laptopDoomMin?: number | null; slouchPct?: number | null; deskMin?: number | null; breaks?: number | null; blinkPerMin?: number | null;
+}
 
 export interface Fit { n: number; r: number; slope: number; p: number }
 export interface Insight extends Fit { id: string; text: string; pAdjusted: number; demo: boolean }
@@ -62,18 +66,26 @@ export function adjust(ps: number[]): number[] {
   return out;
 }
 
-const HYPOTHESES: { id: string; label: string; x: (r: NightRow) => number | null }[] = [
-  { id: "late-total", label: "late-night use across both devices", x: (r) => (r.laptopLateMin === null || r.phoneLateMin === null ? null : r.laptopLateMin + r.phoneLateMin) },
-  { id: "late-laptop", label: "late-night laptop use", x: (r) => r.laptopLateMin },
-  { id: "late-phone", label: "late-night phone use", x: (r) => r.phoneLateMin },
-  { id: "doom", label: "doom-scrolling", x: (r) => r.doomMin },
+type Pick = (r: NightRow) => number | null;
+const sleep: Pick = (r) => r.sleepMin;
+const lessMore = (v: number) => (v < 0 ? "less" : "more");
+const HYPOTHESES: { id: string; x: Pick; y: Pick; say: (effect: number, slope: number, n: number) => string }[] = [
+  ...([
+    ["late-total", "late-night use across both devices", (r) => (r.laptopLateMin === null || r.phoneLateMin === null ? null : r.laptopLateMin + r.phoneLateMin)],
+    ["late-laptop", "late-night laptop use", (r) => r.laptopLateMin],
+    ["late-phone", "late-night phone use", (r) => r.phoneLateMin],
+    ["doom", "doom-scrolling", (r) => r.doomMin],
+  ] as [string, string, Pick][]).map(([id, label, x]) => ({ id, x, y: sleep,
+    say: (e: number, s: number, n: number) => `Each extra ${STEP_MIN} min of ${label} was associated with about ${e} min ${lessMore(s)} sleep (${n} nights).` })),
+  { id: "slouch-doom", x: (r) => r.laptopDoomMin ?? null, y: (r) => r.slouchPct ?? null,
+    say: (e, s, n) => `On days with ${STEP_MIN} min more doom-scrolling on the laptop, you slouched about ${e}% ${lessMore(s)} of your desk time (${n} days).` },
 ];
 
 /** Associations only. Correction counts every hypothesis tested, not just those shown. */
 export function findInsights(rows: NightRow[], demo: boolean): Insight[] {
   const tested = HYPOTHESES.flatMap((h) => {
     const xs: number[] = [], ys: number[] = [];
-    for (const row of rows) { const x = h.x(row); if (x !== null && row.sleepMin !== null) { xs.push(x); ys.push(row.sleepMin); } }
+    for (const row of rows) { const x = h.x(row), y = h.y(row); if (x !== null && y !== null) { xs.push(x); ys.push(y); } }
     const f = xs.length >= MIN_NIGHTS ? fit(xs, ys) : null;
     return f ? [{ h, f }] : [];
   });
@@ -82,7 +94,7 @@ export function findInsights(rows: NightRow[], demo: boolean): Insight[] {
     const pAdjusted = adj[i]!;
     const effect = Math.round(Math.abs(f.slope * STEP_MIN));
     if (pAdjusted >= ALPHA || Math.abs(f.r) <= MIN_R || effect < 1) return [];
-    const text = `Each extra ${STEP_MIN} min of ${h.label} was associated with about ${effect} min ${f.slope < 0 ? "less" : "more"} sleep (${f.n} nights).`;
+    const text = h.say(effect, f.slope, f.n);
     return [{ ...f, id: h.id, text, pAdjusted, demo }];
   }).sort((a, b) => a.pAdjusted - b.pAdjusted);
 }

@@ -1,8 +1,14 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mirror: posture</title><link rel="stylesheet" href="eye.css"><link rel="stylesheet" href="style.css"></head>
-<body class="page"><h1>Sit up</h1>
-<p>Mirror learns your good posture, then looks for six seconds every five minutes. It looks every 12 seconds during a demo. Your camera light comes on each time.</p>
+<body class="page"><h1>Sit up</h1><p class="small">Mirror <span id="ver"></span></p>
+<p>Mirror learns your good posture, then looks for six seconds every five minutes (every 12 seconds during a demo). It notices your head dropping, leaning in towards the screen, hunched shoulders and tilting, and nudges you after two slouching checks in a row. Your camera light comes on each time.</p>
 <p>The check runs on this laptop. No picture is saved or sent. Mirror keeps your baseline proportions, the last result, and daily estimates of slouching, desk time and breaks. This isn't medical advice.</p>
 <p id="state" role="status"></p><p id="error" class="error" role="alert"></p>
-<video id="v" playsinline hidden></video>
-<div class="row"><button id="start" class="primary">Turn on the camera</button><button id="save" class="primary" hidden>This is my good posture</button><button id="stop" class="danger" hidden>Turn posture off</button></div>
+<div id="cam" hidden><div class="frame"><video id="v" playsinline></video><canvas id="dots"></canvas></div><p id="live" class="live" role="status" aria-live="polite"></p></div>
+<p id="how" hidden>Sit the way you want to sit: back against the chair, shoulders relaxed and back, head straight above your shoulders. Then press the button and hold still for six seconds.</p>
+<div class="row"><button id="start" class="primary">Turn on the camera</button><button id="save" class="primary" hidden>This is my good posture</button><button id="hide" hidden>Turn the camera off</button><button id="stop" class="danger" hidden>Turn posture off</button></div>
+<p class="strict"><label>How strict <select id="strict"><option value="gentle">Gentle</option><option value="normal">Normal</option><option value="strict">Strict</option></select></label></p>
+<section id="eyes" hidden><h2>Eyes and face</h2><p>Every 20 minutes Mirror watches your face for 20 seconds. It counts blinks and notices drowsiness (eyes closing, yawning), whether you face the screen, restlessness and sitting too close. It speaks up when you look drowsy, or blink much less or much more than usual (much more often means tired or irritated eyes). It keeps the results only, never pictures, and never uploads them.</p>
+<p><label><input id="blink" type="checkbox"> Check my eyes and face</label></p>
+<p><label><input id="expr" type="checkbox"> Also note my expression (smiling, frowning or neutral)</label><br><span class="small">This is what the camera sees on your face, not how you feel: a frown can just be concentration.</span></p>
+<button id="blink-now">Check my eyes and face now</button><p id="blink-state" role="status"></p></section>
 <script type="module" src="posture.js"></script></body></html>

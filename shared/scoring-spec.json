@@ -1,11 +1,13 @@
 {
   "version": 1,
-  "content": { "shortVideo": 45, "social": 40, "news": 25, "neutral": 0 },
+  "content": { "shortVideo": 45, "social": 40, "video": 35, "news": 25, "neutral": 0 },
   "switching": { "max": 20, "fullAtPerMin": 6 },
   "duration": { "max": 25, "fullAtMin": 30 },
   "lateNight": { "points": 15, "startHour": 23, "endHour": 4 },
   "slouch": { "points": 10 },
   "dayStartHour": 4,
   "windowMin": 10,
+  "switchAlertSec": 25,
+  "switchAlertGapMin": 2,
   "nudge": { "threshold": 60, "cooldownMin": 15, "intentMin": 20, "sustainMin": { "laptop": 1, "phone": 15 } }
 }

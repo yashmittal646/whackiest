@@ -1,5 +1,9 @@
 import type { DevicePacket } from "./packet.ts";
 import type { Category } from "./score.ts";
+import type { Activity } from "./activity.ts";
+import { STUDY_WORDS } from "./activity.ts";
+import PHONE from "../phone-apps.json" with { type: "json" };
+export { PHONE };
 import { dayKey, dayStart } from "./time.ts";
 import { newTrack, step, toPacket, type Track } from "./tracker.ts";
 
@@ -11,9 +15,36 @@ export const APPS: Record<string, Category> = {
   "com.instagram.android": "social", "com.instagram.lite": "social", "com.twitter.android": "social", "com.reddit.frontpage": "social",
   "com.facebook.katana": "social", "com.facebook.lite": "social", "com.instagram.barcelona": "social", "com.snapchat.android": "social",
   "com.pinterest": "social", "com.tumblr": "social", "xyz.blueskyweb.app": "social",
+  "com.netflix.mediaclient": "video", "com.amazon.avod.thirdpartyclient": "video", "in.startv.hotstar": "video", "tv.twitch.android.app": "video",
   "com.google.android.apps.magazines": "news", "com.cnn.mobile.android.phone": "news", "com.ndtv.india": "news", "com.toi.reader.activities": "news",
 };
 export const classifyApp = (pkg: string): Category => APPS[pkg] ?? "neutral";
+
+const study = PHONE.study as Record<string, string>, names = PHONE.names as Record<string, string>;
+/**
+ * What kind of thing an app is. YouTube needs the playing video's title, which Android shares only
+ * with notification access; without it YouTube counts as "other", so a lecture never triggers an alert.
+ */
+export function phoneActivity(pkg: string, title: string | null = null): Activity {
+  if (study[pkg]) return { category: "neutral", kind: "study", label: `Studying: ${study[pkg]}` };
+  if (pkg === PHONE.videoApp) {
+    if (title === null) return { category: "neutral", kind: "other", label: "YouTube" };
+    return STUDY_WORDS.test(title) ? { category: "neutral", kind: "study", label: "Learning on YouTube" } : { category: "video", kind: "waste", label: "Watching YouTube" };
+  }
+  const category = classifyApp(pkg);
+  if (category === "neutral") return { category, kind: "other", label: "" };
+  return { category, kind: category === "news" ? "news" : "waste", label: names[pkg] ?? "A feed" };
+}
+
+/** Minutes studying and on time-wasters between two times. App names are not kept. */
+export function kindMinutes(spans: Span[], from: number, to: number): { study: number; waste: number } {
+  const out = { study: 0, waste: 0 };
+  for (const s of spans) {
+    const ms = Math.min(s.end, to) - Math.max(s.start, from), k = phoneActivity(s.pkg).kind;
+    if (ms > 0 && (k === "study" || k === "waste")) out[k] += ms;
+  }
+  return { study: Math.round(out.study / 60000), waste: Math.round(out.waste / 60000) };
+}
 
 /** Runs the same scoring as the laptop, minute by minute, over recorded foreground spans. */
 export function trackPhone(spans: Span[], from: number, to: number): Track {

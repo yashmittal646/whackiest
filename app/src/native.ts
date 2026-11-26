@@ -1,5 +1,7 @@
-import { requireNativeModule } from "expo";
-import { fromB64, toB64, type Span } from "@mirror/shared";
+import { requireNativeModule, requireNativeView } from "expo";
+import type { ComponentType } from "react";
+import type { ViewProps } from "react-native";
+import { fromB64, toB64, type Asleep, type Point, type Span } from "@mirror/shared";
 
 interface Native {
   random(n: number): string;
@@ -12,9 +14,29 @@ interface Native {
   stopWatch(forget: boolean): Promise<void>;
   watchOn(): boolean;
   testNudge(): void;
+  canOverlay(): boolean;
+  openOverlaySettings(): void;
+  canSeeMedia(): boolean;
+  openMediaSettings(): void;
+  alertsOn(): boolean;
+  setAlerts(on: boolean): void;
+  sleepSupported(): boolean;
+  sleepAllowed(): boolean;
+  sleep(from: number, to: number): Promise<Asleep[]>;
   usage(from: number, to: number): Promise<Span[]>;
 }
 export const Native = requireNativeModule<Native>("MirrorNative");
+export interface Look { aspect: number; people: number; points: Point[] }
+/** One face look: nine blendshape scores and six points, keyed by landmark number. */
+export interface FaceLook { t: number; faces: number; aspect: number; shapes: Record<string, number>; points: Record<string, Point> }
+type CameraProps = ViewProps & {
+  mode?: "pose" | "face";
+  onLook?: (e: { nativeEvent: Look }) => void;
+  onFace?: (e: { nativeEvent: FaceLook }) => void;
+  onProblem: (e: { nativeEvent: { message: string } }) => void;
+};
+/** The live front camera. Only landmark points and scores come back. */
+export const PostureCamera = requireNativeView<CameraProps>("MirrorNative") as ComponentType<CameraProps>;
 
 // Only the parts of WebCrypto that shared/src/vault.ts uses, backed by Android's own crypto.
 type Key = { b64: string };

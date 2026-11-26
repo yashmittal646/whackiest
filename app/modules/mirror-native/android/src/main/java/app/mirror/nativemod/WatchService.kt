@@ -38,10 +38,17 @@ class WatchService : Service() {
     private fun open(c: Context): PendingIntent =
       PendingIntent.getActivity(c, 0, c.packageManager.getLaunchIntentForPackage(c.packageName)!!, PendingIntent.FLAG_IMMUTABLE)
 
-    fun nudge(c: Context, test: Boolean) {
+    private fun setIntent(c: Context) {
+      val ms = prefs(c).getString("config", null)?.let { JSONObject(it).getJSONObject("spec").getJSONObject("nudge").getLong("intentMin") * 60_000 } ?: 1_200_000
+      prefs(c).edit().putLong("intentUntil", System.currentTimeMillis() + ms).apply()
+    }
+
+    /** The card over the current app when allowed, otherwise a pop-up notification. */
+    fun nudge(c: Context, test: Boolean, title: String = "Still what you came for?", text: String = "You've been scrolling for a while.", back: String? = null, backName: String? = null) {
+      if (Card.show(c, title, text, back, backName, test) { if (!test) setIntent(c) }) return
       val b = Notification.Builder(c, "nudge").setSmallIcon(R.drawable.mirror_eye)
         .setContentTitle(if (test) "Mirror (test)" else "Mirror")
-        .setContentText("You've been scrolling for a while. Still what you came for?")
+        .setContentText("$text $title")
         .setContentIntent(open(c)).setAutoCancel(true)
       if (!test) {
         val on = PendingIntent.getService(c, 1, Intent(c, WatchService::class.java).setAction(INTENT), PendingIntent.FLAG_IMMUTABLE)
@@ -57,6 +64,12 @@ class WatchService : Service() {
     override fun run() {
       try { check() } catch (e: Exception) { Log.e("Mirror", "Check failed", e) }
       handler.postDelayed(this, 60_000)
+    }
+  }
+  private val quick = object : Runnable {
+    override fun run() {
+      try { switchCheck() } catch (e: Exception) { Log.e("Mirror", "Switch check failed", e) }
+      handler.postDelayed(this, 5_000)
     }
   }
 
@@ -76,11 +89,13 @@ class WatchService : Service() {
     if (Build.VERSION.SDK_INT >= 34) startForeground(WATCH, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE) else startForeground(WATCH, n)
     if (!prefs(this).getBoolean("on", false)) { stopSelf(); return START_NOT_STICKY }
     if (intent?.action == INTENT) {
-      engine()?.let { prefs(this).edit().putLong("intentUntil", System.currentTimeMillis() + it.intentMs).apply() }
+      setIntent(this)
       getSystemService(NotificationManager::class.java).cancel(NUDGE)
     }
     handler.removeCallbacks(tick)
+    handler.removeCallbacks(quick)
     handler.post(tick)
+    handler.postDelayed(quick, 5_000)
     return START_STICKY
   }
 
@@ -101,5 +116,33 @@ class WatchService : Service() {
     if (s.doomMinutes(Usage.spans(this, to - LOOK_BACK, to), to - LOOK_BACK, to) < s.sustain) return
     p.edit().putLong("lastNudge", now).apply()
     nudge(this, false)
+  }
+
+  private fun apps(): Apps? = prefs(this).getString("config", null)?.let { val j = JSONObject(it); if (j.has("phone")) Apps(j.getJSONObject("phone"), j.getJSONObject("apps")) else null }
+
+  /**
+   * Every 5 seconds: has the person been on a time-waster for 25 seconds since arriving there?
+   * Looks at the last 15 minutes of app switches; app names stay in memory.
+   */
+  private fun switchCheck() {
+    val p = prefs(this)
+    if (!p.getBoolean("alerts", true) || !getSystemService(PowerManager::class.java).isInteractive || !Usage.allowed(this)) return
+    val a = apps() ?: return
+    val spec = JSONObject(p.getString("config", "{}")!!).getJSONObject("spec")
+    val now = System.currentTimeMillis()
+    val spans = Usage.spans(this, now - 15 * 60_000, now)
+    val cur = spans.lastOrNull() ?: return
+    if (cur.end < now - 2_000 || cur.pkg == packageName) return
+    // Arrival: where this app's run began, joining brief interruptions such as the notification shade.
+    var since = cur.start
+    for (s in spans.dropLast(1).reversed()) { if (s.pkg == cur.pkg && since - s.end < 3_000) since = s.start else break }
+    if (now - since < spec.getLong("switchAlertSec") * 1000 || p.getLong("alertedSince", 0) == since) return
+    val act = a.kind(cur.pkg, if (cur.pkg == a.videoApp) MediaWatch.title(this, cur.pkg) else null)
+    if (act.kind != "waste") return
+    if (now < p.getLong("intentUntil", 0) || now - p.getLong("lastAlert", 0) < spec.getLong("switchAlertGapMin") * 60_000) return
+    p.edit().putLong("alertedSince", since).putLong("lastAlert", now).apply()
+    val study = spans.lastOrNull { it.end <= since + 1_000 && it.end >= since - 2 * 60_000 && a.studyName(it.pkg) != null }
+    val was = if (study != null) " You were in ${a.studyName(study.pkg)} a moment ago." else ""
+    nudge(this, false, "Still what you came for?", "${act.label} for ${spec.getLong("switchAlertSec")} seconds.$was", study?.pkg, study?.let { a.studyName(it.pkg) })
   }
 }

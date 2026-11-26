@@ -1,7 +1,7 @@
 import spec from "../scoring-spec.json" with { type: "json" };
 export { spec };
 
-export type Category = "shortVideo" | "social" | "news" | "neutral";
+export type Category = "shortVideo" | "social" | "video" | "news" | "neutral";
 
 export interface ScoreInput {
   category: Category;
@@ -40,7 +40,7 @@ export function doomScore(i: ScoreInput): number {
   return Math.min(100, Math.round(p.content + p.switching + p.duration + p.lateNight + p.slouch));
 }
 
-const SITES: Record<Exclude<Category, "neutral">, string[]> = {
+const SITES: Record<Exclude<Category, "neutral" | "video">, string[]> = {
   shortVideo: ["tiktok.com"],
   social: ["twitter.com", "x.com", "instagram.com", "facebook.com", "reddit.com", "threads.net", "threads.com", "bsky.app", "tumblr.com", "pinterest.com", "9gag.com"],
   news: ["news.google.com", "cnn.com", "bbc.com", "ndtv.com", "timesofindia.indiatimes.com", "dailymail.co.uk"],

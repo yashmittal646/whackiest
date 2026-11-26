@@ -24,3 +24,17 @@ test("window starts at 04:00 and old days never shrink", () => {
   const thin = { ...full!, screenMin: 5 };
   assert.equal(keepFuller([full!], [thin], at(34))[0]!.screenMin, full!.screenMin);
 });
+
+test("phone apps: study, time-wasters, and YouTube only by the playing title", async () => {
+  const { phoneActivity, kindMinutes } = await import("@mirror/shared");
+  const k = (pkg: string, title: string | null = null) => { const a = phoneActivity(pkg, title); return `${a.kind}/${a.label}`; };
+  assert.equal(k("com.google.android.apps.docs"), "study/Studying: Google Drive");
+  assert.equal(k("com.instagram.android"), "waste/Instagram");
+  assert.equal(k("com.netflix.mediaclient"), "waste/Netflix");
+  assert.equal(k("com.google.android.youtube"), "other/YouTube");
+  assert.equal(k("com.google.android.youtube", "Thermodynamics Lecture 3 | JEE"), "study/Learning on YouTube");
+  assert.equal(k("com.google.android.youtube", "Best fails 2026"), "waste/Watching YouTube");
+  assert.equal(k("com.android.chrome"), "other/");
+  const m = 60000;
+  assert.deepEqual(kindMinutes([{ pkg: "com.adobe.reader", start: 0, end: 30 * m }, { pkg: "com.snapchat.android", start: 30 * m, end: 45 * m }, { pkg: "x", start: 45 * m, end: 50 * m }], 0, 40 * m), { study: 30, waste: 10 });
+});

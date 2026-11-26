@@ -2,8 +2,10 @@ package app.mirror.nativemod
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import android.util.Base64
+import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -69,7 +71,25 @@ class MirrorNativeModule : Module() {
       (if (forget) edit.clear() else edit.putBoolean("on", false)).commit()
       WatchService.stop(context)
     }
+    Function("sleepSupported") { SleepSource.supported }
+    Function("sleepAllowed") { SleepSource.allowed(context) }
+    AsyncFunction("sleep") { from: Double, to: Double, promise: Promise ->
+      if (Build.VERSION.SDK_INT >= 34) SleepSource.read(context, from.toLong(), to.toLong(), { promise.resolve(it) }, { promise.reject("SLEEP", it, null) })
+      else promise.resolve(emptyList<Any>())
+    }
+    View(PostureView::class) {
+      Events("onLook", "onFace", "onProblem")
+      Prop("mode") { view: PostureView, mode: String -> view.mode = mode }
+    }
     Function("watchOn") { WatchService.prefs(context).getBoolean("on", false) }
-    Function("testNudge") { WatchService.nudge(context, true) }
+    Function("testNudge") { WatchService.nudge(context, true, "Still what you came for?", "Instagram for 25 seconds. You were in Google Drive a moment ago.") }
+    Function("canOverlay") { Card.allowed(context) }
+    Function("openOverlaySettings") {
+      context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+    Function("canSeeMedia") { MediaWatch.allowed(context) }
+    Function("openMediaSettings") { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    Function("alertsOn") { WatchService.prefs(context).getBoolean("alerts", true) }
+    Function("setAlerts") { on: Boolean -> WatchService.prefs(context).edit().putBoolean("alerts", on).apply() }
   }
 }

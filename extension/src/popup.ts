@@ -1,7 +1,7 @@
-import { dayKey, spec, type ScoreParts } from "@mirror/shared";
+import { dayKey, describe, spec, type ScoreParts } from "@mirror/shared";
 import { eye, setEye, watch } from "../../ui/eye.ts";
 import { $, el, onState } from "./dom.ts";
-import { clock, current, load, send } from "./store.ts";
+import { clock, current, load, loadPosture, send } from "./store.ts";
 import { newDay } from "./tracker.ts";
 
 const LABELS: Record<keyof ScoreParts, string> = { content: "Feed content", switching: "Tab hopping", duration: "Time on feeds", lateNight: "Late night", slouch: "Posture" };
@@ -39,11 +39,16 @@ onState(async () => {
   const intent = $<HTMLButtonElement>("intent");
   intent.disabled = left > 0;
   intent.textContent = left > 0 ? `Nudges paused, ${left} min left` : "I'm here on purpose";
+  const seen = (await loadPosture()).face, fresh = seen && Date.now() - seen.at < 30 * 60000;
+  $("doing").textContent = [s.doing ? `Now: ${s.doing.label}` : "", fresh ? `Face: ${describe(seen)}` : ""].filter(Boolean).join("\n");
+  $("doing").className = s.doing?.kind ?? "";
+  $<HTMLInputElement>("alerts").checked = (((await chrome.storage.local.get("alerts")).alerts as { on: boolean } | undefined)?.on ?? true);
   $("demo").textContent = s.demo ? "Stop demo" : "Start demo";
   $("banner").hidden = !s.demo;
   $("time").textContent = new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 });
 
+$<HTMLInputElement>("alerts").onchange = (e) => void send({ cmd: (e.target as HTMLInputElement).checked ? "alerts-on" : "alerts-off" });
 $("intent").onclick = () => void send({ cmd: "intent" });
 $("demo").onclick = async () => { await send({ cmd: (await load()).demo ? "demo-off" : "demo-on" }); };
 $("share").onclick = () => void chrome.tabs.create({ url: "account.html" });

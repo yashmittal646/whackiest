@@ -7,9 +7,11 @@ import Storage from "expo-sqlite/kv-store";
 import { SchibstedGrotesk_500Medium } from "@expo-google-fonts/schibsted-grotesk/500Medium";
 import { SchibstedGrotesk_800ExtraBold } from "@expo-google-fonts/schibsted-grotesk/800ExtraBold";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { buildReport, dayKey, deleteAccount, download, fresh, getVault, hourly, MIN_NIGHTS, samplePackets, setUpVault, signIn, signOut, signUp, toB64, unlock, type DevicePacket, type Session, type Vault } from "@mirror/shared";
-import { clearAccount, CONFIG, loadAccount, measure, saveAccount, sync, watch, wipe, type Account } from "./data";
+import { buildReport, dayKey, deleteAccount, download, fresh, getVault, hourly, lastNight, MIN_NIGHTS, samplePackets, setUpVault, signIn, signOut, signUp, toB64, unlock, type DevicePacket, type Session, type Sleep, type Vault } from "@mirror/shared";
+import { loadSitting, type Sitting, askSleep, typeSleep, clearAccount, CONFIG, loadAccount, measure, saveAccount, sync, watch, wipe, type Account } from "./data";
 import { Native } from "./native";
+import { SittingCheck } from "./Sitting";
+import { FaceCheck } from "./Face";
 import { Band, Button, C, Copy, Count, Eye, F, Handoff, Line, Tabs, Title, Tunnel, Wobble, type Tab } from "./ui";
 
 export default function Main() { return <SafeAreaProvider><Mirror /></SafeAreaProvider>; }
@@ -17,7 +19,7 @@ export default function Main() { return <SafeAreaProvider><Mirror /></SafeAreaPr
 function Mirror() {
   const [fonts] = useFonts({ AnybodyWide: require("../assets/fonts/AnybodyWide.ttf"), AnybodyTall: require("../assets/fonts/AnybodyTall.ttf"), AnybodyBold: require("../assets/fonts/AnybodyBold.ttf"), SchibstedGrotesk_500Medium, SchibstedGrotesk_800ExtraBold });
   const inset = useSafeAreaInsets(), { width } = useWindowDimensions(), scroller = useRef<ScrollViewInstance>(null);
-  const [tab, setTab] = useState<Tab>("tonight"), [inside, setInside] = useState(false), [live, setLive] = useState(false);
+  const [tab, setTab] = useState<Tab>("tonight"), [inside, setInside] = useState(false), [live, setLive] = useState(false), [kinds, setKinds] = useState<{ study: number; waste: number } | null>(null), [perms, setPerms] = useState({ overlay: false, media: false, alerts: true }), [sleep, setSleep] = useState<Record<string, Sleep>>({}), [typed, setTyped] = useState(420), [sitting, setSitting] = useState<Sitting>({ base: null, log: [] });
   const [ready, setReady] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [account, setAccount] = useState<Account | null>(null), [session, setSession] = useState<Session | null>(null), [vault, setVault] = useState<Vault | null>(null);
   const [made, setMade] = useState<{ phrase: string; key: string } | null>(null);
@@ -42,6 +44,11 @@ function Mirror() {
     setLive(Native.watchOn());
     const m = await measure();
     setDays(m.days);
+    setSleep(m.sleep);
+    setKinds(m.kinds);
+    setPerms({ overlay: Native.canOverlay(), media: Native.canSeeMedia(), alerts: Native.alertsOn() });
+    setSitting(await loadSitting());
+    if (m.problem) setError(m.problem);
     return m.days;
   }, []);
 
@@ -85,7 +92,7 @@ function Mirror() {
     await syncNow(a);
   };
   const leave = async (all: boolean) => {
-    if (all) { await wipe(); setDays([]); setLive(false); } else await clearAccount();
+    if (all) { await wipe(); setDays([]); setSleep({}); setSitting({ base: null, log: [] }); setLive(false); } else await clearAccount();
     setAccount(null); setCloud([]); setLast("");
     if (all) { setInside(false); setTab("tonight"); }
   };
@@ -122,7 +129,8 @@ function Mirror() {
   const todays = real.filter((p) => p.date === dayKey(now)), doom = today?.doomMin ?? 0;
   const mood = !access ? C.pink : doom >= 45 ? C.tomato : doom >= 15 ? C.butter : C.mint;
   const bg = tab === "tonight" ? mood : tab === "report" ? C.butter : C.pink;
-  const late = new Date(now).getHours();
+  const late = new Date(now).getHours(), night = sleep[lastNight(now)], span = (m: number) => `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
+  const keepSleep = (m: number | null) => void attempt(async () => { await typeSleep(m); await remeasure(); });
   return (
     <View style={{ flex: 1, backgroundColor: bg }} onTouchMove={(e) => glance(e.nativeEvent.pageX, e.nativeEvent.pageY)} onTouchStart={(e) => glance(e.nativeEvent.pageX, e.nativeEvent.pageY)}>
       <StatusBar style="dark" />
@@ -139,12 +147,25 @@ function Mirror() {
               <View style={{ flexDirection: "row", borderTopWidth: 3, borderColor: C.ink, paddingTop: 12 }}>
                 {([[today?.screenMin, "screen min"], [today?.lateNightMin, "late min"], [today?.switches, "app switches"]] as const).map(([v, n]) => <View key={n} style={{ flex: 1 }}><Text style={{ fontFamily: F.tall, fontSize: 44, lineHeight: 46, color: C.ink }}>{v ?? 0}</Text><Copy style={{ fontSize: 15 }}>{n}</Copy></View>)}
               </View>
+              {kinds ? <Copy style={{ fontFamily: F.strong }}>{`Today: ${kinds.study} min studying · ${kinds.waste} min on time-wasters`}</Copy> : null}
             </Band>
             <Band bg={live ? C.cobalt : C.pink}><Title color={live ? C.white : C.ink}>{live ? "Watching live" : "Want a tap on the shoulder?"}</Title>
               <Copy style={{ color: live ? C.white : C.ink }}>{live ? "Mirror checks once a minute while the screen is on. After a phone restart, open Mirror to resume." : "Mirror can nudge you after 15 minutes of doom-scrolling. It shows a permanent notification while it watches."}</Copy>
-              {live ? <><Button bg={C.white} title="Show a test nudge" onPress={() => Native.testNudge()} /><Button fg={C.white} title="Stop nudges" disabled={busy} onPress={() => void attempt(async () => { await Native.stopWatch(false); setLive(false); })} /></>
+              {live ? <><Button bg={C.white} title={perms.alerts ? "Switch alerts: on" : "Switch alerts: off"} onPress={() => { Native.setAlerts(!perms.alerts); setPerms({ ...perms, alerts: !perms.alerts }); }} />
+                <Copy style={{ color: C.white, fontSize: 15 }}>{perms.alerts ? "25 seconds after you open a time-waster, Mirror asks if it's what you came for." : "Only the 15-minute doom nudge is on."}</Copy>
+                {perms.overlay ? null : <><Copy style={{ color: C.white }}>To show nudges as a card over the app you're in, allow Mirror to display over other apps. Without it you get a notification.</Copy><Button bg={C.butter} title="Allow the nudge card" onPress={() => Native.openOverlaySettings()} /></>}
+                {perms.media ? null : <><Copy style={{ color: C.white }}>Optional: let Mirror see the title of the YouTube video playing, so lectures don't count as time-wasting. This needs notification access; Mirror ignores the notifications themselves.</Copy><Button bg={C.white} title="Let Mirror tell lectures apart" onPress={() => Native.openMediaSettings()} /></>}
+                <Button bg={C.white} title="Show a test nudge" onPress={() => Native.testNudge()} /><Button fg={C.white} title="Stop nudges" disabled={busy} onPress={() => void attempt(async () => { await Native.stopWatch(false); setLive(false); })} /></>
                 : <Button bg={C.ink} fg={C.white} title="Start live nudges" disabled={busy} onPress={() => void attempt(async () => { const ok = await watch(); setLive(ok); if (!ok) throw new Error("Allow notifications for Mirror in Android settings."); })} />}
             </Band>
+            <Band bg={C.pink}><Title>{night ? `${span(night.min)} asleep` : "How did you sleep?"}</Title>
+              {night ? <><Copy>{night.from === "you" ? "Last night, typed in by you." : "Last night, from Health Connect."}</Copy>{night.from === "you" ? <Button title="Clear this" disabled={busy} onPress={() => keepSleep(null)} /> : null}</> : (
+                <><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}><Button title="−15" onPress={() => setTyped(Math.max(0, typed - 15))} /><Text accessibilityLiveRegion="polite" style={{ fontFamily: F.tall, fontSize: 48, color: C.ink }}>{span(typed)}</Text><Button title="+15" onPress={() => setTyped(Math.min(960, typed + 15))} /></View>
+                  <Button bg={C.ink} fg={C.white} title="Save last night" disabled={busy} onPress={() => keepSleep(typed)} /></>)}
+              {Native.sleepSupported() && !Native.sleepAllowed() ? <Button title="Read sleep from Health Connect" disabled={busy} onPress={() => void attempt(async () => { if ((await askSleep()) !== "granted") throw new Error("Allow Mirror in Android's Health Connect settings."); await remeasure(); })} /> : null}
+            </Band>
+            <SittingCheck sitting={sitting} onSaved={setSitting} width={width} />
+            <FaceCheck width={width} />
             <Band bg={C.white}><Title>Hour by hour</Title><Handoff on={tab + todays.length} laptop={hourly(todays, "laptop", null)} phone={hourly(todays, "phone", null)} /></Band>
           </>
         ) : (

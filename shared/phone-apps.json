@@ -1,0 +1,36 @@
+{
+  "comment": "Phone apps Mirror recognises. Read by shared/src/phone.ts and, through the app, by the Android watcher. App names are used in memory only.",
+  "studyWords": "\\b(lecture|lesson|tutorial|course|class \\d|chapter|explained|how to|crash course|full course|syllabus|exam|revision|derivation|theorem|problem set|jee|neet|gate|upsc|cbse|nptel|mit opencourseware|leetcode|interview prep|dsa|algorithm|programming|physics|chemistry|biology|maths?|calculus|economics)\\b",
+  "study": {
+    "com.google.android.apps.docs": "Google Drive",
+    "com.google.android.apps.docs.editors.docs": "Google Docs",
+    "com.google.android.apps.docs.editors.sheets": "Google Sheets",
+    "com.google.android.apps.docs.editors.slides": "Google Slides",
+    "com.google.android.apps.classroom": "Google Classroom",
+    "com.google.android.keep": "Google Keep",
+    "com.google.android.apps.books": "Play Books",
+    "com.adobe.reader": "Adobe Acrobat",
+    "com.microsoft.office.officehubrow": "Microsoft 365",
+    "com.microsoft.office.word": "Word",
+    "com.microsoft.office.onenote": "OneNote",
+    "com.samsung.android.app.notes": "Samsung Notes",
+    "notion.id": "Notion",
+    "org.coursera.android": "Coursera",
+    "org.khanacademy.android": "Khan Academy",
+    "com.udemy.android": "Udemy",
+    "com.duolingo": "Duolingo",
+    "com.amazon.kindle": "Kindle",
+    "com.microblink.photomath": "Photomath",
+    "xyz.penpencil.physicswala": "Physics Wallah"
+  },
+  "names": {
+    "com.zhiliaoapp.musically": "TikTok", "com.ss.android.ugc.trill": "TikTok",
+    "com.instagram.android": "Instagram", "com.instagram.lite": "Instagram", "com.instagram.barcelona": "Threads",
+    "com.twitter.android": "X", "com.reddit.frontpage": "Reddit", "com.facebook.katana": "Facebook", "com.facebook.lite": "Facebook",
+    "com.snapchat.android": "Snapchat", "com.pinterest": "Pinterest", "com.tumblr": "Tumblr", "xyz.blueskyweb.app": "Bluesky",
+    "com.netflix.mediaclient": "Netflix", "com.amazon.avod.thirdpartyclient": "Prime Video", "in.startv.hotstar": "Hotstar", "tv.twitch.android.app": "Twitch",
+    "com.google.android.youtube": "YouTube"
+  },
+  "streaming": ["com.netflix.mediaclient", "com.amazon.avod.thirdpartyclient", "in.startv.hotstar", "tv.twitch.android.app"],
+  "videoApp": "com.google.android.youtube"
+}

@@ -8,3 +8,7 @@ export * from "./report.ts";
 export * from "./tracker.ts";
 export * from "./phone.ts";
 export * from "./posture.ts";
+export * from "./sleep.ts";
+export * from "./blink.ts";
+export * from "./activity.ts";
+export * from "./face.ts";

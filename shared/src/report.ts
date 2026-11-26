@@ -8,6 +8,17 @@ export interface Report { dates: string[]; nights: NightRow[]; insights: Insight
 const of = (ps: DevicePacket[], device: DevicePacket["device"]) => ps.filter((p) => p.device === device);
 const sum = (ps: DevicePacket[], f: (p: DevicePacket) => number) => (ps.length ? ps.reduce((a, p) => a + f(p), 0) : null);
 
+const known = (ps: DevicePacket[], f: (p: DevicePacket) => number | null) => { const v = ps.map(f).filter((x): x is number => x !== null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
+/** Camera totals from the laptop. Several laptops add up; blink rates average. */
+function desk(laptop: DevicePacket[]) {
+  const deskMin = known(laptop, (p) => p.presenceMin), slouch = known(laptop, (p) => p.slouchMin), rated = laptop.filter((p) => p.blinkPerMin !== null);
+  return {
+    laptopDoomMin: sum(laptop, (p) => p.doomMin), deskMin, breaks: known(laptop, (p) => p.breaks),
+    slouchPct: deskMin !== null && slouch !== null && deskMin >= 30 ? Math.round((100 * slouch) / deskMin) : null,
+    blinkPerMin: rated.length ? Math.round((rated.reduce((a, p) => a + p.blinkPerMin!, 0) / rated.length) * 10) / 10 : null,
+  };
+}
+
 /** Joins every device by date. A device with no record that day is "not measured", never zero. */
 export function buildReport(packets: DevicePacket[], demo: boolean): Report {
   const dates = [...new Set(packets.map((p) => p.date))].sort();
@@ -20,6 +31,7 @@ export function buildReport(packets: DevicePacket[], demo: boolean): Report {
       phoneLateMin: sum(phone, (p) => p.lateNightMin),
       // Comparable only on days when both devices reported.
       doomMin: laptop.length && phone.length ? sum(day, (p) => p.doomMin) : null,
+      ...desk(laptop),
     };
   });
   return { dates, nights, insights: findInsights(nights, demo) };
@@ -51,6 +63,10 @@ export function samplePackets(now: number, count = 21): DevicePacket[] {
       return { v: 1, device, date, generatedAt: now, demo: true, screenMin: doomMin + lateNightMin + pick(120, 200), doomMin, lateNightMin, lateDoomMin, hourlyDoom, switches: pick(60, 220), slouchMin: null, presenceMin: null, breaks: null, blinkPerMin: null, sleepMin };
     };
     const laptop = make("laptop", { 13: 4, 17: 6, 20: 10, 21: 16, 22: 26, 23: 22, 0: 3 }, null);
+    laptop.presenceMin = 5 * pick(48, 84);
+    laptop.slouchMin = 5 * Math.round(Math.min(1, 0.12 + laptop.doomMin / 500 + rnd() * 0.08) * laptop.presenceMin / 5);
+    laptop.breaks = pick(1, 5);
+    laptop.blinkPerMin = Math.round((17 - laptop.doomMin / 25 + rnd() * 3) * 10) / 10;
     const phone = make("phone", { 8: 6, 13: 8, 18: 8, 21: 4, 22: 6, 23: 12 + 8 * heavy, 0: 14 + 34 * heavy, 1: 4 + 26 * heavy }, null);
     phone.sleepMin = 480 - Math.round(0.5 * (laptop.lateNightMin + phone.lateNightMin)) + pick(-22, 22);
     return [laptop, phone];
